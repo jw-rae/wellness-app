@@ -119,6 +119,12 @@ function togglePause() {
 
 function handleKeydown(event) {
   if (event.code === 'Space') {
+    // Don't handle spacebar if user is typing in an input or textarea
+    const activeElement = document.activeElement;
+    if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA')) {
+      return;
+    }
+    
     event.preventDefault();
     if (!sessionStore.isActive) {
       startSession();

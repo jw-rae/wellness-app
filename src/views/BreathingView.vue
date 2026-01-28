@@ -1,5 +1,12 @@
 <template>
-  <div class="breathing-view" :class="{ 'panel-collapsed': isPanelCollapsed }">
+  <div 
+    class="breathing-view" 
+    :class="{ 'panel-collapsed': isPanelCollapsed, 'drag-over': isDragOver }"
+    @dragenter.prevent="handleDragEnter"
+    @dragover.prevent="handleDragOver"
+    @dragleave.prevent="handleDragLeave"
+    @drop.prevent="handleDrop"
+  >
     <BreathingControls 
       ref="controlsRef" 
       @collapse-changed="(collapsed) => { isPanelCollapsed = collapsed; emit('panel-collapsed', collapsed); }"
@@ -11,17 +18,38 @@
         :showTime="styleSettings.showTime"
         :affirmations="affirmationSettings.text"
       />
+      
+      <div v-if="isDragOver" class="drop-overlay">
+        <div class="drop-message">
+          <Upload :size="48" />
+          <p>Drop JSON preset to load</p>
+        </div>
+      </div>
     </div>
+    
+    <Modal 
+      v-model="showModal" 
+      :title="modalTitle" 
+      :message="modalMessage"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { Upload } from 'lucide-vue-next';
 import BreathingControls from '../components/BreathingControls.vue';
 import CircularFocalPoint from '../components/CircularFocalPoint.vue';
+import Modal from '../components/Modal.vue';
 
+const router = useRouter();
 const controlsRef = ref(null);
 const isPanelCollapsed = ref(false);
+const isDragOver = ref(false);
+const showModal = ref(false);
+const modalTitle = ref('');
+const modalMessage = ref('');
 
 const emit = defineEmits(['panel-collapsed']);
 
@@ -37,6 +65,134 @@ const affirmationSettings = computed(() => {
     text: controlsRef.value?.affirmationsRef?.affirmations ?? '',
   };
 });
+
+onMounted(() => {
+  // Check for pending preset from bilateral view drag-drop
+  const pendingPreset = sessionStorage.getItem('pendingBreathingPreset');
+  if (pendingPreset) {
+    sessionStorage.removeItem('pendingBreathingPreset');
+    try {
+      const preset = JSON.parse(pendingPreset);
+      loadBreathingPreset(preset);
+    } catch (error) {
+      console.error('Failed to load pending preset:', error);
+    }
+  }
+});
+
+function handleDragEnter(e) {
+  isDragOver.value = true;
+}
+
+function handleDragOver(e) {
+  isDragOver.value = true;
+}
+
+function handleDragLeave(e) {
+  if (e.target === e.currentTarget) {
+    isDragOver.value = false;
+  }
+}
+
+function handleDrop(e) {
+  isDragOver.value = false;
+  
+  const files = e.dataTransfer.files;
+  if (files.length === 0) return;
+  
+  const file = files[0];
+  if (!file.name.endsWith('.json')) {
+    showError('Invalid File', 'Please drop a JSON file');
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const preset = JSON.parse(event.target.result);
+      
+      if (!preset || !preset.type) {
+        showError('Invalid Preset', 'The file does not contain a valid preset');
+        return;
+      }
+      
+      if (preset.type === 'bilateral') {
+        // Switch to bilateral view
+        router.push('/bilateral');
+        // Wait for route change then load preset
+        setTimeout(() => {
+          loadBilateralPreset(preset);
+        }, 100);
+        return;
+      }
+      
+      if (preset.type === 'breathing') {
+        try {
+          loadBreathingPreset(preset);
+        } catch (error) {
+          console.error('Error loading preset:', error);
+          showError('Load Error', 'Failed to apply preset settings');
+        }
+      } else {
+        showError('Invalid Preset', 'Unknown preset type');
+      }
+    } catch (error) {
+      showError('Invalid File', 'Failed to parse JSON file');
+      console.error('Drop error:', error);
+    }
+  };
+  reader.readAsText(file);
+}
+
+function loadBreathingPreset(preset) {
+  if (!controlsRef.value) return;
+  
+  if (preset.selectedPattern && controlsRef.value.basicControlsRef) {
+    controlsRef.value.basicControlsRef.selectedPattern = preset.selectedPattern;
+  }
+  if (preset.durationMinutes !== undefined && controlsRef.value.basicControlsRef) {
+    controlsRef.value.basicControlsRef.durationMinutes = preset.durationMinutes;
+  }
+  if (preset.durationSeconds !== undefined && controlsRef.value.basicControlsRef) {
+    controlsRef.value.basicControlsRef.durationSeconds = preset.durationSeconds;
+  }
+  if (preset.selectedTheme && controlsRef.value.styleRef) {
+    controlsRef.value.styleRef.selectedTheme = preset.selectedTheme;
+    document.documentElement.setAttribute('data-theme', preset.selectedTheme);
+  }
+  if (preset.darkMode !== undefined && controlsRef.value.styleRef) {
+    controlsRef.value.styleRef.darkMode = preset.darkMode;
+    if (preset.darkMode) {
+      controlsRef.value.styleRef.setDarkMode();
+    } else {
+      controlsRef.value.styleRef.setLightMode();
+    }
+  }
+  if (preset.showInhaleExhale !== undefined && controlsRef.value.styleRef) {
+    controlsRef.value.styleRef.showInhaleExhale = preset.showInhaleExhale;
+  }
+  if (preset.showTime !== undefined && controlsRef.value.styleRef) {
+    controlsRef.value.styleRef.showTime = preset.showTime;
+  }
+  if (preset.focalPointType && controlsRef.value.styleRef) {
+    controlsRef.value.styleRef.focalPointType = preset.focalPointType;
+  }
+  if (preset.affirmations && controlsRef.value.affirmationsRef) {
+    controlsRef.value.affirmationsRef.affirmations = preset.affirmations;
+  }
+}
+
+function loadBilateralPreset(preset) {
+  // This will be called after routing to bilateral view
+  // Store in sessionStorage for bilateral view to pick up
+  sessionStorage.setItem('pendingBilateralPreset', JSON.stringify(preset));
+}
+
+function showError(title, message) {
+  modalTitle.value = title;
+  modalMessage.value = message;
+  showModal.value = true;
+}
 </script>
 
 <style scoped>
@@ -61,6 +217,41 @@ const affirmationSettings = computed(() => {
   background: var(--color-surface-primary);
   padding: var(--space-2xl);
   padding-bottom: 140px;
+  position: relative;
+}
+
+.breathing-view.drag-over .main-canvas::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px dashed var(--color-brand-primary-500);
+  border-radius: var(--border-radius-lg);
+  pointer-events: none;
+}
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.drop-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+  color: var(--color-brand-primary-500);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.drop-message p {
+  margin: 0;
 }
 
 .instruction-text {

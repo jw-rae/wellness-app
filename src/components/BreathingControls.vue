@@ -20,6 +20,7 @@
       <SaveImportSection 
         ref="saveImportRef"
         @save="handleSave"
+        @export="handleExport"
         @import="handleImport"
       />
     </div>
@@ -48,6 +49,7 @@ const saveImportRef = ref(null);
 const emit = defineEmits(['collapse-changed']);
 
 defineExpose({
+  basicControlsRef,
   styleRef,
   affirmationsRef,
   saveImportRef,
@@ -89,7 +91,7 @@ function handleSave() {
   const presetName = saveImportRef.value.presetName;
   
   if (!presetName.trim()) {
-    alert('Please enter a preset name');
+    saveImportRef.value.showAlert('error', 'Please enter a preset name');
     return;
   }
   
@@ -106,11 +108,110 @@ function handleSave() {
   });
   
   saveImportRef.value.presetName = '';
-  alert('Preset saved!');
+  saveImportRef.value.showAlert('success', 'Preset saved!');
 }
 
 function handleImport() {
-  alert('Import functionality coming soon!');
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  input.onchange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const preset = JSON.parse(e.target.result);
+        
+        // Validate preset structure
+        if (!preset || preset.type !== 'breathing') {
+          saveImportRef.value.showAlert('error', 'Invalid breathing preset file');
+          return;
+        }
+        
+        // Apply breathing pattern
+        if (preset.selectedPattern) {
+          basicControlsRef.value.selectedPattern = preset.selectedPattern;
+        }
+        
+        // Apply duration
+        if (preset.durationMinutes !== undefined) {
+          basicControlsRef.value.durationMinutes = preset.durationMinutes;
+        }
+        if (preset.durationSeconds !== undefined) {
+          basicControlsRef.value.durationSeconds = preset.durationSeconds;
+        }
+        
+        // Apply style settings
+        if (preset.selectedTheme) {
+          styleRef.value.selectedTheme = preset.selectedTheme;
+          document.documentElement.setAttribute('data-theme', preset.selectedTheme);
+        }
+        if (preset.darkMode !== undefined) {
+          styleRef.value.darkMode = preset.darkMode;
+          if (preset.darkMode) {
+            styleRef.value.setDarkMode();
+          } else {
+            styleRef.value.setLightMode();
+          }
+        }
+        if (preset.showInhaleExhale !== undefined) {
+          styleRef.value.showInhaleExhale = preset.showInhaleExhale;
+        }
+        if (preset.showTime !== undefined) {
+          styleRef.value.showTime = preset.showTime;
+        }
+        if (preset.focalPointType) {
+          styleRef.value.focalPointType = preset.focalPointType;
+        }
+        
+        // Apply affirmations
+        if (preset.affirmations) {
+          affirmationsRef.value.affirmations = preset.affirmations;
+        }
+        
+        saveImportRef.value.showAlert('success', 'Preset imported successfully!');
+      } catch (error) {
+        saveImportRef.value.showAlert('error', 'Failed to import preset. Invalid JSON format.');
+        console.error('Import error:', error);
+      }
+    };
+    reader.readAsText(file);
+  };
+  
+  input.click();
+}
+
+function handleExport() {
+  const date = new Date();
+  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+  
+  const preset = {
+    type: 'breathing',
+    selectedPattern: basicControlsRef.value.selectedPattern,
+    durationMinutes: basicControlsRef.value.durationMinutes,
+    durationSeconds: basicControlsRef.value.durationSeconds,
+    selectedTheme: styleRef.value.selectedTheme,
+    darkMode: styleRef.value.darkMode,
+    showInhaleExhale: styleRef.value.showInhaleExhale,
+    showTime: styleRef.value.showTime,
+    focalPointType: styleRef.value.focalPointType,
+    affirmations: affirmationsRef.value.affirmations || '',
+    exportedAt: date.toISOString(),
+  };
+  
+  const json = JSON.stringify(preset, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `breathing_${dateStr}_preset.json`;
+  a.click();
+  
+  URL.revokeObjectURL(url);
 }
 </script>
 

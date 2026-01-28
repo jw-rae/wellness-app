@@ -107,9 +107,13 @@ onMounted(() => {
 });
 
 defineExpose({
+  selectedTheme,
+  darkMode,
   showInhaleExhale,
   showTime,
   focalPointType,
+  setLightMode,
+  setDarkMode,
 });
 </script>
 

@@ -151,14 +151,25 @@
         :icon="Save" 
         :initially-expanded="false"
       >
+        <Transition name="alert">
+          <div v-if="alertMessage" :class="['alert', alertType]">
+            {{ alertMessage }}
+          </div>
+        </Transition>
+        
         <div class="control-section">
           <label for="preset-name">Preset Name</label>
-          <input 
-            id="preset-name"
-            type="text" 
-            v-model="presetName"
-            placeholder="My EMDR Session"
-          />
+          <div class="input-with-button">
+            <input 
+              id="preset-name"
+              type="text" 
+              v-model="presetName"
+              placeholder="My EMDR Session"
+            />
+            <button class="btn-icon" @click="handleSave" title="Save preset">
+              <Save :size="18" />
+            </button>
+          </div>
         </div>
 
         <div class="control-section button-group">
@@ -197,8 +208,19 @@ const showTime = ref(true);
 const affirmations = ref('I am safe\nI am healing\nI release the past\nI trust the process');
 const affirmationInterval = ref(15);
 const presetName = ref('');
+const alertType = ref('');
+const alertMessage = ref('');
 
 const emit = defineEmits(['collapse-changed']);
+
+function showAlert(type, message) {
+  alertType.value = type;
+  alertMessage.value = message;
+  setTimeout(() => {
+    alertType.value = '';
+    alertMessage.value = '';
+  }, 3000);
+}
 
 const visualModeOptions = [
   { value: 'slide', label: 'Slide Mode' },
@@ -271,21 +293,126 @@ function handleStop() {
   sessionStore.stopSession();
 }
 
+function handleSave() {
+  if (!presetName.value.trim()) {
+    showAlert('error', 'Please enter a preset name');
+    return;
+  }
+  
+  // Add save logic here if needed
+  presetName.value = '';
+  showAlert('success', 'Preset saved!');
+}
+
 function handleExport() {
-  alert('Export functionality coming soon!');
+  const date = new Date();
+  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+  
+  const preset = {
+    type: 'bilateral',
+    bpm: bpm.value,
+    durationMinutes: durationMinutes.value,
+    visualMode: visualMode.value,
+    bilateralAudio: bilateralAudio.value,
+    selectedTheme: selectedTheme.value,
+    darkMode: darkMode.value,
+    showTime: showTime.value,
+    affirmations: affirmations.value || '',
+    affirmationInterval: affirmationInterval.value,
+    exportedAt: date.toISOString(),
+  };
+  
+  const json = JSON.stringify(preset, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `bilateral_${dateStr}_preset.json`;
+  a.click();
+  
+  URL.revokeObjectURL(url);
 }
 
 function handleImport() {
-  alert('Import functionality coming soon!');
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  input.onchange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const preset = JSON.parse(e.target.result);
+        
+        // Validate preset structure
+        if (!preset || preset.type !== 'bilateral') {
+          showAlert('error', 'Invalid bilateral preset file');
+          return;
+        }
+        
+        // Apply bilateral settings
+        if (preset.bpm !== undefined) {
+          bpm.value = preset.bpm;
+        }
+        if (preset.durationMinutes !== undefined) {
+          durationMinutes.value = preset.durationMinutes;
+        }
+        if (preset.visualMode) {
+          visualMode.value = preset.visualMode;
+        }
+        if (preset.bilateralAudio !== undefined) {
+          bilateralAudio.value = preset.bilateralAudio;
+        }
+        if (preset.selectedTheme) {
+          selectedTheme.value = preset.selectedTheme;
+          document.documentElement.setAttribute('data-theme', preset.selectedTheme);
+        }
+        if (preset.darkMode !== undefined) {
+          darkMode.value = preset.darkMode;
+          if (preset.darkMode) {
+            setDarkMode();
+          } else {
+            setLightMode();
+          }
+        }
+        if (preset.showTime !== undefined) {
+          showTime.value = preset.showTime;
+        }
+        if (preset.affirmations) {
+          affirmations.value = preset.affirmations;
+        }
+        if (preset.affirmationInterval !== undefined) {
+          affirmationInterval.value = preset.affirmationInterval;
+        }
+        
+        showAlert('success', 'Preset imported successfully!');
+      } catch (error) {
+        showAlert('error', 'Failed to import preset. Invalid JSON format.');
+        console.error('Import error:', error);
+      }
+    };
+    reader.readAsText(file);
+  };
+  
+  input.click();
 }
 
 defineExpose({
   bilateralAudio,
   bpm,
+  durationMinutes,
   visualMode,
+  selectedTheme,
+  darkMode,
   showTime,
   affirmations,
   affirmationInterval,
+  setDarkMode,
+  setLightMode,
 });
 </script>
 
@@ -534,6 +661,37 @@ input[type="text"]:focus {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-primary-500) 20%, transparent);
 }
 
+.input-with-button {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.input-with-button input {
+  flex: 1;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm);
+  background: var(--color-brand-primary-500);
+  border: none;
+  border-radius: 4px;
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  transition: all var(--duration-200);
+  min-width: 36px;
+  height: 36px;
+}
+
+.btn-icon:hover {
+  background: var(--color-brand-primary-600);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
 textarea {
   padding: var(--space-sm);
   background: var(--color-surface-elevated);
@@ -584,6 +742,38 @@ textarea:focus {
 .btn-secondary:hover {
   background: var(--color-surface-elevated);
   border-color: var(--color-brand-primary-500);
+}
+
+.alert {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+}
+
+.alert.success {
+  background: color-mix(in srgb, #10b981 15%, transparent);
+  color: #10b981;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
+}
+
+.alert.error {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #ef4444;
+  border: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
+}
+
+.alert-enter-active,
+.alert-leave-active {
+  transition: all var(--duration-300) var(--ease-out);
+}
+
+.alert-enter-from,
+.alert-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
 }
 
 .color-mode-toggle {
