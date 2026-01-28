@@ -1,5 +1,5 @@
 <template>
-  <div class="bottom-control-bar">
+  <div class="bottom-control-bar" :class="{ 'session-active': sessionStore.isActive && !sessionStore.isPaused }">
     <RouterLink to="/breathing" class="nav-btn">
       Breathing
     </RouterLink>
@@ -19,6 +19,9 @@
 </template>
 
 <script setup>
+import { useSessionStore } from '../stores/sessionStore.js';
+
+const sessionStore = useSessionStore();
 </script>
 
 <style scoped>
@@ -36,7 +39,16 @@
   border-radius: var(--border-radius-full);
   box-shadow: var(--shadow-lg);
   z-index: var(--z-index-40);
-  transition: transform var(--duration-300) var(--ease-out);
+  transition: transform var(--duration-300) var(--ease-out), opacity var(--duration-300) var(--ease-out);
+  opacity: 1;
+}
+
+.bottom-control-bar.session-active {
+  opacity: 0.3;
+}
+
+.bottom-control-bar.session-active:hover {
+  opacity: 1;
 }
 
 .bottom-control-bar.adjust-position {
