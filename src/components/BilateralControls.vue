@@ -465,13 +465,13 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: var(--z-index-50);
   color: var(--color-text-primary);
 }
 
 .bilateral-controls.collapsed .toggle-btn {
-  right: -32px;
-  left: 0;
+  left: var(--space-md);
+  right: auto;
 }
 
 .toggle-btn:hover {

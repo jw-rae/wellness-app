@@ -261,7 +261,7 @@ function handleExport() {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: var(--z-index-50);
   color: var(--color-text-primary);
 }
 

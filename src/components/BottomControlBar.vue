@@ -41,6 +41,28 @@ const sessionStore = useSessionStore();
   z-index: var(--z-index-40);
   transition: transform var(--duration-300) var(--ease-out), opacity var(--duration-300) var(--ease-out);
   opacity: 1;
+  max-width: calc(100vw - var(--space-xl) * 2);
+}
+
+@media (max-width: 768px) {
+  .bottom-control-bar {
+    bottom: var(--space-md);
+    padding: var(--space-xs) var(--space-md);
+    gap: var(--space-xs);
+  }
+  
+  /* On narrow screens, always center regardless of panel state */
+  .bottom-control-bar,
+  .bottom-control-bar.adjust-position {
+    transform: translateX(-50%) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .bottom-control-bar {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
 }
 
 .bottom-control-bar.session-active {
@@ -64,6 +86,13 @@ const sessionStore = useSessionStore();
   border-radius: var(--border-radius-full);
   transition: all var(--duration-200);
   white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .nav-btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-xs);
+  }
 }
 
 .nav-btn:hover {
