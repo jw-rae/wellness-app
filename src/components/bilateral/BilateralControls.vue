@@ -102,9 +102,11 @@ function handleStop() {
   sessionStore.stopSession();
 }
 
-function handleSave(name, showAlert) {
-  if (!name || name.trim() === '') {
-    showAlert('error', 'Please enter a preset name');
+function handleSave() {
+  const presetName = saveImportRef.value.presetName;
+  
+  if (!presetName.trim()) {
+    saveImportRef.value.showAlert('error', 'Please enter a preset name');
     return;
   }
   
@@ -122,16 +124,14 @@ function handleSave(name, showAlert) {
   };
   
   const savedPresets = JSON.parse(localStorage.getItem('breathingPresets') || '[]');
-  savedPresets.push({ name: name.trim(), ...preset });
+  savedPresets.push({ name: presetName.trim(), ...preset });
   localStorage.setItem('breathingPresets', JSON.stringify(savedPresets));
   
-  showAlert('success', `Preset "${name}" saved!`);
-  if (saveImportRef.value) {
-    saveImportRef.value.presetName = '';
-  }
+  saveImportRef.value.presetName = '';
+  saveImportRef.value.showAlert('success', 'Preset saved!');
 }
 
-function handleExport(showAlert) {
+function handleExport() {
   const date = new Date();
   const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
   
@@ -159,10 +159,9 @@ function handleExport(showAlert) {
   a.click();
   
   URL.revokeObjectURL(url);
-  showAlert('success', 'Preset exported successfully!');
 }
 
-function handleImport(showAlert) {
+function handleImport() {
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json';
@@ -178,57 +177,14 @@ function handleImport(showAlert) {
         
         // Validate preset structure
         if (!preset || preset.type !== 'bilateral') {
-          showAlert('error', 'Invalid bilateral preset file');
+          saveImportRef.value.showAlert('error', 'Invalid bilateral preset file');
           return;
         }
         
-        // Apply bilateral settings to child components
-        if (basicControlsRef.value) {
-          if (preset.bpm !== undefined) {
-            basicControlsRef.value.bpm = preset.bpm;
-          }
-          if (preset.durationMinutes !== undefined) {
-            basicControlsRef.value.durationMinutes = preset.durationMinutes;
-          }
-        }
-        
-        if (styleRef.value) {
-          if (preset.visualMode) {
-            styleRef.value.visualMode = preset.visualMode;
-          }
-          if (preset.selectedTheme) {
-            styleRef.value.selectedTheme = preset.selectedTheme;
-            document.documentElement.setAttribute('data-theme', preset.selectedTheme);
-          }
-          if (preset.darkMode !== undefined) {
-            styleRef.value.darkMode = preset.darkMode;
-            if (preset.darkMode) {
-              styleRef.value.setDarkMode();
-            } else {
-              styleRef.value.setLightMode();
-            }
-          }
-          if (preset.showTime !== undefined) {
-            styleRef.value.showTime = preset.showTime;
-          }
-        }
-        
-        if (audioRef.value && preset.bilateralAudio !== undefined) {
-          audioRef.value.bilateralAudio = preset.bilateralAudio;
-        }
-        
-        if (affirmationsRef.value) {
-          if (preset.affirmations) {
-            affirmationsRef.value.affirmations = preset.affirmations;
-          }
-          if (preset.affirmationInterval !== undefined) {
-            affirmationsRef.value.affirmationInterval = preset.affirmationInterval;
-          }
-        }
-        
-        showAlert('success', 'Preset imported successfully!');
+        applyBilateralPreset(preset);
+        saveImportRef.value.showAlert('success', 'Preset imported successfully!');
       } catch (error) {
-        showAlert('error', 'Failed to import preset. Invalid JSON format.');
+        saveImportRef.value.showAlert('error', 'Failed to import preset. Invalid JSON format.');
         console.error('Import error:', error);
       }
     };
@@ -236,6 +192,52 @@ function handleImport(showAlert) {
   };
   
   input.click();
+}
+
+function applyBilateralPreset(preset) {
+  // Apply bilateral settings to child components
+  if (basicControlsRef.value) {
+    if (preset.bpm !== undefined) {
+      basicControlsRef.value.bpm = preset.bpm;
+    }
+    if (preset.durationMinutes !== undefined) {
+      basicControlsRef.value.durationMinutes = preset.durationMinutes;
+    }
+  }
+  
+  if (styleRef.value) {
+    if (preset.visualMode) {
+      styleRef.value.visualMode = preset.visualMode;
+    }
+    if (preset.selectedTheme) {
+      styleRef.value.selectedTheme = preset.selectedTheme;
+      document.documentElement.setAttribute('data-theme', preset.selectedTheme);
+    }
+    if (preset.darkMode !== undefined) {
+      styleRef.value.darkMode = preset.darkMode;
+      if (preset.darkMode) {
+        styleRef.value.setDarkMode();
+      } else {
+        styleRef.value.setLightMode();
+      }
+    }
+    if (preset.showTime !== undefined) {
+      styleRef.value.showTime = preset.showTime;
+    }
+  }
+  
+  if (audioRef.value && preset.bilateralAudio !== undefined) {
+    audioRef.value.bilateralAudio = preset.bilateralAudio;
+  }
+  
+  if (affirmationsRef.value) {
+    if (preset.affirmations) {
+      affirmationsRef.value.affirmations = preset.affirmations;
+    }
+    if (preset.affirmationInterval !== undefined) {
+      affirmationsRef.value.affirmationInterval = preset.affirmationInterval;
+    }
+  }
 }
 
 defineExpose({
@@ -248,6 +250,7 @@ defineExpose({
   showTime,
   affirmations,
   affirmationInterval,
+  applyBilateralPreset,
 });
 </script>
 

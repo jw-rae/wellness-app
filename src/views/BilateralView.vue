@@ -74,7 +74,7 @@ onMounted(() => {
     sessionStorage.removeItem('pendingBilateralPreset');
     try {
       const preset = JSON.parse(pendingPreset);
-      loadBilateralPreset(preset);
+      controlsRef.value.applyBilateralPreset(preset);
     } catch (error) {
       console.error('Failed to load pending preset:', error);
     }
@@ -129,10 +129,9 @@ function handleDrop(e) {
       
       if (preset.type === 'bilateral') {
         try {
-          loadBilateralPreset(preset);
+          controlsRef.value.applyBilateralPreset(preset);
         } catch (error) {
           console.error('Error loading preset:', error);
-          showError('Load Error', 'Failed to apply preset settings');
         }
       } else {
         showError('Invalid Preset', 'Unknown preset type');
@@ -143,44 +142,6 @@ function handleDrop(e) {
     }
   };
   reader.readAsText(file);
-}
-
-function loadBilateralPreset(preset) {
-  if (!controlsRef.value) return;
-  
-  if (preset.bpm !== undefined) {
-    controlsRef.value.bpm = preset.bpm;
-  }
-  if (preset.durationMinutes !== undefined) {
-    controlsRef.value.durationMinutes = preset.durationMinutes;
-  }
-  if (preset.visualMode) {
-    controlsRef.value.visualMode = preset.visualMode;
-  }
-  if (preset.bilateralAudio !== undefined) {
-    controlsRef.value.bilateralAudio = preset.bilateralAudio;
-  }
-  if (preset.selectedTheme) {
-    controlsRef.value.selectedTheme = preset.selectedTheme;
-    document.documentElement.setAttribute('data-theme', preset.selectedTheme);
-  }
-  if (preset.darkMode !== undefined) {
-    controlsRef.value.darkMode = preset.darkMode;
-    if (preset.darkMode) {
-      controlsRef.value.setDarkMode();
-    } else {
-      controlsRef.value.setLightMode();
-    }
-  }
-  if (preset.showTime !== undefined) {
-    controlsRef.value.showTime = preset.showTime;
-  }
-  if (preset.affirmations) {
-    controlsRef.value.affirmations = preset.affirmations;
-  }
-  if (preset.affirmationInterval !== undefined) {
-    controlsRef.value.affirmationInterval = preset.affirmationInterval;
-  }
 }
 
 function loadBreathingPreset(preset) {

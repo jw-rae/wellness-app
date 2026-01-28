@@ -1,41 +1,42 @@
 <template>
   <CollapsibleSection 
-    title="Save & Import" 
+    title="Save / Import" 
     :icon="Save" 
     :initially-expanded="false"
   >
+    <Transition name="alert">
+      <div v-if="alertMessage" :class="['alert', alertType]">
+        {{ alertMessage }}
+      </div>
+    </Transition>
+    
     <div class="control-section">
+      <label for="preset-name">Preset Name</label>
       <div class="input-with-button">
-        <input
-          type="text"
+        <input 
+          id="preset-name" 
+          type="text" 
           v-model="presetName"
-          placeholder="Preset name"
-          class="preset-name-input"
+          placeholder="Enter preset name"
         />
-        <button class="btn-icon" @click="handleSave" title="Save preset">
+        <button class="btn-icon" @click="$emit('save')" title="Save preset">
           <Save :size="18" />
         </button>
       </div>
     </div>
-
+    
     <div class="control-section">
       <div class="button-group">
-        <button class="btn-secondary" @click="handleExport">
+        <button class="btn-secondary" @click="$emit('export')">
           <Download :size="16" />
           Export
         </button>
-        <button class="btn-secondary" @click="handleImport">
+        <button class="btn-secondary" @click="$emit('import')">
           <Upload :size="16" />
           Import
         </button>
       </div>
     </div>
-
-    <Transition name="alert">
-      <div v-if="localAlertType" class="alert" :class="`alert-${localAlertType}`">
-        {{ localAlertMessage }}
-      </div>
-    </Transition>
   </CollapsibleSection>
 </template>
 
@@ -44,31 +45,19 @@ import { ref } from 'vue';
 import { Save, Download, Upload } from 'lucide-vue-next';
 import CollapsibleSection from '../ui/CollapsibleSection.vue';
 
-const presetName = ref('');
-const localAlertType = ref('');
-const localAlertMessage = ref('');
+defineEmits(['save', 'export', 'import']);
 
-const emit = defineEmits(['save', 'export', 'import', 'show-alert']);
+const presetName = ref('');
+const alertType = ref('');
+const alertMessage = ref('');
 
 function showAlert(type, message) {
-  localAlertType.value = type;
-  localAlertMessage.value = message;
+  alertType.value = type;
+  alertMessage.value = message;
   setTimeout(() => {
-    localAlertType.value = '';
-    localAlertMessage.value = '';
+    alertType.value = '';
+    alertMessage.value = '';
   }, 3000);
-}
-
-function handleSave() {
-  emit('save', presetName.value, showAlert);
-}
-
-function handleExport() {
-  emit('export', showAlert);
-}
-
-function handleImport() {
-  emit('import', showAlert);
 }
 
 defineExpose({
@@ -84,52 +73,58 @@ defineExpose({
   gap: var(--space-sm);
 }
 
-.input-with-button {
-  display: flex;
-  gap: var(--space-xs);
+.control-section label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
-.preset-name-input {
-  flex: 1;
+input[type="text"] {
+  width: 100%;
   padding: var(--space-sm);
-  background: var(--color-surface-tertiary);
+  background: var(--color-surface-elevated);
   border: 2px solid var(--color-border-primary);
   border-radius: 4px;
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
-  transition: all var(--duration-200);
+  font-family: inherit;
 }
 
-.preset-name-input:focus {
+input[type="text"]:focus {
   outline: none;
   border-color: var(--color-brand-primary-500);
-  background: var(--color-surface-elevated);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-primary-500) 20%, transparent);
 }
 
-.preset-name-input::placeholder {
-  color: var(--color-text-tertiary);
+.input-with-button {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.input-with-button input {
+  flex: 1;
 }
 
 .btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-sm);
   background: var(--color-brand-primary-500);
   border: none;
   border-radius: 4px;
   color: var(--color-text-inverse);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: all var(--duration-200);
+  min-width: 36px;
+  height: 36px;
 }
 
 .btn-icon:hover {
   background: var(--color-brand-primary-600);
   transform: translateY(-1px);
-}
-
-.btn-icon:active {
-  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
 }
 
 .button-group {
@@ -139,59 +134,54 @@ defineExpose({
 
 .btn-secondary {
   flex: 1;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-tertiary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: 4px;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-200);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: var(--space-xs);
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-surface-tertiary);
-  border: 2px solid var(--color-border-primary);
-  border-radius: 4px;
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-  transition: all var(--duration-200);
 }
 
 .btn-secondary:hover {
-  background: var(--color-surface-elevated);
+  background: var(--color-brand-primary-500);
+  color: var(--color-text-inverse);
   border-color: var(--color-brand-primary-500);
-  color: var(--color-brand-primary-500);
-}
-
-.btn-secondary:active {
-  transform: translateY(1px);
 }
 
 .alert {
-  padding: var(--space-sm);
-  border-radius: 4px;
-  font-size: var(--font-size-sm);
   margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  border-radius: var(--border-radius-base);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
 }
 
-.alert-success {
-  background: color-mix(in srgb, #10b981 20%, transparent);
-  border: 2px solid #10b981;
+.alert.success {
+  background: color-mix(in srgb, #10b981 15%, transparent);
   color: #10b981;
+  border: 1px solid color-mix(in srgb, #10b981 30%, transparent);
 }
 
-.alert-error {
-  background: color-mix(in srgb, #ef4444 20%, transparent);
-  border: 2px solid #ef4444;
+.alert.error {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
   color: #ef4444;
+  border: 1px solid color-mix(in srgb, #ef4444 30%, transparent);
 }
 
 .alert-enter-active,
 .alert-leave-active {
-  transition: all var(--duration-300);
+  transition: all var(--duration-300) var(--ease-out);
 }
 
-.alert-enter-from {
-  opacity: 0;
-  transform: translateY(-10px);
-}
-
+.alert-enter-from,
 .alert-leave-to {
   opacity: 0;
   transform: translateY(-10px);
