@@ -43,7 +43,7 @@
 <script setup>
 import { ref } from 'vue';
 import { Save, Download, Upload } from 'lucide-vue-next';
-import CollapsibleSection from '../CollapsibleSection.vue';
+import CollapsibleSection from '../ui/CollapsibleSection.vue';
 
 defineEmits(['save', 'export', 'import']);
 

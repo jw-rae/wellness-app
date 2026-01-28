@@ -33,7 +33,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { useSessionStore } from '../stores/sessionStore.js';
+import { useSessionStore } from '../../stores/sessionStore.js';
 
 const sessionStore = useSessionStore();
 

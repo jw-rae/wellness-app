@@ -202,13 +202,13 @@
   --color-background-secondary: var(--color-brand-primary-900);
   --color-background-tertiary: var(--color-brand-primary-800);
   --color-background-inverse: var(--color-brand-primary-50);
-  
+
   --color-surface-primary: var(--color-brand-primary-950);
   --color-surface-secondary: var(--color-brand-primary-900);
   --color-surface-tertiary: var(--color-brand-primary-800);
   --color-surface-elevated: var(--color-brand-primary-900);
   --color-surface-overlay: color-mix(in srgb, var(--color-brand-primary-950) 80%, transparent);
-  
+
   --color-text-primary: var(--color-brand-primary-50);
   --color-text-secondary: var(--color-brand-primary-200);
   --color-text-tertiary: var(--color-brand-primary-300);
@@ -216,7 +216,7 @@
   --color-text-disabled: var(--color-brand-primary-600);
   --color-text-link: var(--color-brand-primary-400);
   --color-text-link-hover: var(--color-brand-primary-300);
-  
+
   --color-border-primary: var(--color-brand-primary-700);
   --color-border-secondary: var(--color-brand-primary-600);
   --color-border-interactive: var(--color-brand-primary-500);
@@ -229,13 +229,13 @@
     --color-background-secondary: var(--color-brand-primary-900);
     --color-background-tertiary: var(--color-brand-primary-800);
     --color-background-inverse: var(--color-brand-primary-50);
-    
+
     --color-surface-primary: var(--color-brand-primary-950);
     --color-surface-secondary: var(--color-brand-primary-900);
     --color-surface-tertiary: var(--color-brand-primary-800);
     --color-surface-elevated: var(--color-brand-primary-900);
     --color-surface-overlay: color-mix(in srgb, var(--color-brand-primary-950) 80%, transparent);
-    
+
     --color-text-primary: var(--color-brand-primary-50);
     --color-text-secondary: var(--color-brand-primary-200);
     --color-text-tertiary: var(--color-brand-primary-300);
@@ -243,16 +243,11 @@
     --color-text-disabled: var(--color-brand-primary-600);
     --color-text-link: var(--color-brand-primary-400);
     --color-text-link-hover: var(--color-brand-primary-300);
-    
+
     --color-border-primary: var(--color-brand-primary-700);
     --color-border-secondary: var(--color-brand-primary-600);
     --color-border-interactive: var(--color-brand-primary-500);
     --color-border-focus: var(--color-brand-primary-400);
-
-  }
-}
-
-}
 
   }
 }

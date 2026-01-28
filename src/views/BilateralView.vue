@@ -42,9 +42,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { Upload } from 'lucide-vue-next';
-import BilateralControls from '../components/BilateralControls.vue';
-import BilateralCanvas from '../components/BilateralCanvas.vue';
-import Modal from '../components/Modal.vue';
+import BilateralControls from '../components/bilateral/BilateralControls.vue';
+import BilateralCanvas from '../components/bilateral/BilateralCanvas.vue';
+import Modal from '../components/ui/Modal.vue';
 
 const router = useRouter();
 const controlsRef = ref(null);

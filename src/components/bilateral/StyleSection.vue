@@ -2,8 +2,16 @@
   <CollapsibleSection 
     title="Style" 
     :icon="Settings" 
-    :initially-expanded="true"
+    :initially-expanded="false"
   >
+    <div class="control-section">
+      <GameSelect
+        label="Visual Mode"
+        v-model="visualMode"
+        :options="visualModeOptions"
+      />
+    </div>
+
     <div class="control-section">
       <GameSelect
         label="Choose Theme"
@@ -33,30 +41,12 @@
 
     <div class="control-section">
       <label class="toggle-label">
-        <span>Show Inhale/Exhale</span>
-        <div class="toggle-switch">
-          <input type="checkbox" v-model="showInhaleExhale" />
-          <span class="slider"></span>
-        </div>
-      </label>
-    </div>
-
-    <div class="control-section">
-      <label class="toggle-label">
         <span>Show Time</span>
         <div class="toggle-switch">
           <input type="checkbox" v-model="showTime" />
           <span class="slider"></span>
         </div>
       </label>
-    </div>
-
-    <div class="control-section">
-      <GameSelect
-        label="Choose Focal Point"
-        v-model="focalPointType"
-        :options="focalPointOptions"
-      />
     </div>
   </CollapsibleSection>
 </template>
@@ -67,11 +57,15 @@ import { Settings, Sun, Moon } from 'lucide-vue-next';
 import CollapsibleSection from '../ui/CollapsibleSection.vue';
 import GameSelect from '../ui/GameSelect.vue';
 
+const visualMode = ref('slide');
 const selectedTheme = ref('pink');
 const darkMode = ref(true);
-const showInhaleExhale = ref(true);
 const showTime = ref(true);
-const focalPointType = ref('circle');
+
+const visualModeOptions = [
+  { value: 'slide', label: 'Slide Mode' },
+  { value: 'flash', label: 'Flash Mode' },
+];
 
 const themeOptions = [
   { value: 'default', label: 'Default' },
@@ -80,12 +74,6 @@ const themeOptions = [
   { value: 'pink', label: 'Pink' },
   { value: 'green', label: 'Green' },
   { value: 'blue', label: 'Blue' },
-];
-
-const focalPointOptions = [
-  { value: 'circle', label: 'Circle' },
-  { value: 'square', label: 'Square' },
-  { value: 'star', label: 'Star' },
 ];
 
 watch(selectedTheme, (newTheme) => {
@@ -107,11 +95,10 @@ onMounted(() => {
 });
 
 defineExpose({
+  visualMode,
   selectedTheme,
   darkMode,
-  showInhaleExhale,
   showTime,
-  focalPointType,
   setLightMode,
   setDarkMode,
 });
@@ -132,26 +119,27 @@ defineExpose({
 
 .mode-btn {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-sm);
   background: var(--color-surface-tertiary);
-  border: none;
+  border: 2px solid var(--color-border-primary);
   border-radius: 4px;
   color: var(--color-text-secondary);
   cursor: pointer;
   transition: all var(--duration-200);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .mode-btn:hover {
+  background: var(--color-surface-elevated);
   color: var(--color-text-primary);
-  background: var(--color-surface-secondary);
 }
 
 .mode-btn.active {
   background: var(--color-brand-primary-500);
   color: var(--color-text-inverse);
+  border-color: var(--color-brand-primary-500);
 }
 
 .toggle-label {
@@ -165,48 +153,41 @@ defineExpose({
 
 .toggle-switch {
   position: relative;
-  width: 38px;
-  height: 20px;
+  width: 44px;
+  height: 24px;
+  background: var(--color-surface-tertiary);
+  border-radius: 12px;
+  border: 2px solid var(--color-border-primary);
+  transition: all var(--duration-200);
 }
 
 .toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+  display: none;
 }
 
-.slider {
+.toggle-switch .slider {
   position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: var(--color-surface-tertiary);
-  transition: .3s;
-  border-radius: 20px;
-  border: 1px solid var(--color-border-primary);
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 14px;
-  width: 14px;
+  top: 2px;
   left: 2px;
-  bottom: 2px;
-  background-color: var(--color-text-secondary);
-  transition: .3s;
+  width: 16px;
+  height: 16px;
+  background: var(--color-text-secondary);
   border-radius: 50%;
+  transition: all var(--duration-200);
 }
 
-input:checked + .slider {
-  background-color: var(--color-brand-primary-500);
+.toggle-switch input:checked ~ .slider {
+  transform: translateX(20px);
+  background: var(--color-brand-primary-500);
+}
+
+.toggle-switch input:checked + .slider {
+  background: var(--color-brand-primary-500);
+}
+
+input:checked ~ .toggle-switch,
+.toggle-switch:has(input:checked) {
+  background: color-mix(in srgb, var(--color-brand-primary-500) 20%, transparent);
   border-color: var(--color-brand-primary-500);
-}
-
-input:checked + .slider:before {
-  background-color: var(--color-text-inverse);
-  transform: translateX(18px);
 }
 </style>

@@ -41,7 +41,7 @@ import { useRouter } from 'vue-router';
 import { Upload } from 'lucide-vue-next';
 import BreathingControls from '../components/BreathingControls.vue';
 import CircularFocalPoint from '../components/CircularFocalPoint.vue';
-import Modal from '../components/Modal.vue';
+import Modal from '../components/ui/Modal.vue';
 
 const router = useRouter();
 const controlsRef = ref(null);

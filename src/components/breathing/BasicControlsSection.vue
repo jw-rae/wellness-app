@@ -43,8 +43,8 @@
 <script setup>
 import { ref, watch } from 'vue';
 import { useSessionStore } from '../../stores/sessionStore.js';
-import GameSelect from '../GameSelect.vue';
-import SessionControlButtons from '../SessionControlButtons.vue';
+import GameSelect from '../ui/GameSelect.vue';
+import SessionControlButtons from '../ui/SessionControlButtons.vue';
 
 const sessionStore = useSessionStore();
 

@@ -23,7 +23,7 @@
 
 <script setup>
 import { Play, Pause, Square } from 'lucide-vue-next';
-import { useSessionStore } from '../stores/sessionStore.js';
+import { useSessionStore } from '../../stores/sessionStore.js';
 
 const sessionStore = useSessionStore();
 

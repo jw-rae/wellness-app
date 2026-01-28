@@ -20,7 +20,7 @@
 <script setup>
 import { ref } from 'vue';
 import { MessageCircle } from 'lucide-vue-next';
-import CollapsibleSection from '../CollapsibleSection.vue';
+import CollapsibleSection from '../ui/CollapsibleSection.vue';
 
 const affirmations = ref('I am calm\nI am centered\nI am at peace\nI breathe with ease');
 
