@@ -19,7 +19,7 @@
           </filter>
         </defs>
         <circle
-          v-if="props.focalPointType === 'solid'"
+          v-if="props.focalPointType === 'solid' || !props.focalPointType || props.focalPointType === 'circle'"
           ref="circleElement"
           cx="100"
           cy="100"
