@@ -147,9 +147,11 @@ function handlePlayPreset(preset) {
   // Store preset to be loaded by the view (same as import/drag-drop)
   if (preset.type === 'breathing') {
     sessionStorage.setItem('pendingBreathingPreset', JSON.stringify(preset));
+    sessionStorage.setItem('collapsePanel', 'true'); // Collapse panel on play
     router.push('/breathing');
   } else if (preset.type === 'bilateral' || preset.type === 'emdr') {
     sessionStorage.setItem('pendingBilateralPreset', JSON.stringify(preset));
+    sessionStorage.setItem('collapsePanel', 'true'); // Collapse panel on play
     router.push('/bilateral');
   }
 }

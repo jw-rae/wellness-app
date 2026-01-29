@@ -54,6 +54,32 @@ const selectedPattern = ref('box');
 const durationMinutes = ref(5);
 const durationSeconds = ref(0);
 
+// Store original duration to reset after session
+let originalMinutes = 5;
+let originalSeconds = 0;
+
+// Update duration inputs to show countdown during session
+watch(() => sessionStore.remainingTime, (remaining) => {
+  if (sessionStore.isActive && !sessionStore.isPaused) {
+    // Update inputs to show remaining time
+    durationMinutes.value = Math.floor(remaining / 60);
+    durationSeconds.value = remaining % 60;
+  }
+});
+
+// Reset to original values when session ends
+watch(() => sessionStore.isActive, (active, wasActive) => {
+  if (!active && wasActive) {
+    // Session ended, reset to original values
+    durationMinutes.value = originalMinutes;
+    durationSeconds.value = originalSeconds;
+  } else if (active && !wasActive) {
+    // Session starting, store original values
+    originalMinutes = durationMinutes.value;
+    originalSeconds = durationSeconds.value;
+  }
+});
+
 // Stop session when breathing pattern changes
 watch(selectedPattern, () => {
   if (sessionStore.isActive) {

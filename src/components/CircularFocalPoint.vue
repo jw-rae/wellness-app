@@ -147,16 +147,10 @@ const centerText = computed(() => {
 });
 
 const formattedTime = computed(() => {
-  if (!sessionStore.isActive) {
-    // Show duration from controls when not active
-    const totalSeconds = (props.durationMinutes * 60) + props.durationSeconds;
-    const mins = Math.floor(totalSeconds / 60);
-    const secs = totalSeconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-  const remaining = sessionStore.remainingTime;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
+  // Always show time from left panel props (which count down during session)
+  const totalSeconds = (props.durationMinutes * 60) + props.durationSeconds;
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 });
 

@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { Upload } from 'lucide-vue-next';
 import BilateralControls from '../components/bilateral/BilateralControls.vue';
@@ -77,6 +77,22 @@ onMounted(() => {
       controlsRef.value.applyBilateralPreset(preset);
     } catch (error) {
       console.error('Failed to load pending preset:', error);
+    }
+  }
+  
+  // Check if panel should be collapsed (from play preset)
+  const shouldCollapse = sessionStorage.getItem('collapsePanel');
+  if (shouldCollapse === 'true') {
+    sessionStorage.removeItem('collapsePanel');
+    // Collapse the panel if controls are available
+    if (controlsRef.value) {
+      isPanelCollapsed.value = true;
+      // Trigger collapse on the controls component
+      nextTick(() => {
+        if (controlsRef.value?.toggleSidebar) {
+          controlsRef.value.toggleSidebar();
+        }
+      });
     }
   }
 });

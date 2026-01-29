@@ -5,7 +5,7 @@
       <ChevronLeft v-else :size="20" />
     </button>
     
-    <div v-if="!isCollapsed" class="controls-content">
+    <div v-show="!isCollapsed" class="controls-content">
       <BasicControlsSection 
         ref="basicControlsRef"
         @start="handleStart"
@@ -54,6 +54,7 @@ defineExpose({
   styleRef,
   affirmationsRef,
   saveImportRef,
+  toggleSidebar,
 });
 
 // Auto-collapse when sequence starts

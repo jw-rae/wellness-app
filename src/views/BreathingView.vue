@@ -39,7 +39,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, nextTick, unref } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePresetStore } from '../stores/presetStore.js';
 import { Upload } from 'lucide-vue-next';
@@ -73,11 +73,16 @@ const affirmationSettings = computed(() => {
 });
 
 const durationSettings = computed(() => {
-  // Need to access .value because durationMinutes/durationSeconds are refs
-  const minutes = controlsRef.value?.basicControlsRef?.durationMinutes?.value ?? 
-                  controlsRef.value?.basicControlsRef?.durationMinutes ?? 5;
-  const seconds = controlsRef.value?.basicControlsRef?.durationSeconds?.value ?? 
-                  controlsRef.value?.basicControlsRef?.durationSeconds ?? 0;
+  if (!controlsRef.value?.basicControlsRef) {
+    return { minutes: 5, seconds: 0 };
+  }
+  
+  const basicControls = controlsRef.value.basicControlsRef;
+  
+  // Force reactivity by accessing the ref values
+  const minutes = unref(basicControls.durationMinutes);
+  const seconds = unref(basicControls.durationSeconds);
+  
   return {
     minutes,
     seconds,
@@ -94,6 +99,22 @@ onMounted(() => {
       loadBreathingPreset(preset);
     } catch (error) {
       console.error('Failed to load pending preset:', error);
+    }
+  }
+  
+  // Check if panel should be collapsed (from play preset)
+  const shouldCollapse = sessionStorage.getItem('collapsePanel');
+  if (shouldCollapse === 'true') {
+    sessionStorage.removeItem('collapsePanel');
+    // Collapse the panel if controls are available
+    if (controlsRef.value) {
+      isPanelCollapsed.value = true;
+      // Trigger collapse on the controls component
+      nextTick(() => {
+        if (controlsRef.value?.toggleSidebar) {
+          controlsRef.value.toggleSidebar();
+        }
+      });
     }
   }
 });
