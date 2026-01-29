@@ -11,6 +11,9 @@
           </div>
           <div class="modal-body">
             <p>{{ message }}</p>
+            <ul v-if="listItems && listItems.length > 0" class="modal-list">
+              <li v-for="(item, index) in listItems" :key="index">{{ item }}</li>
+            </ul>
           </div>
           <div class="modal-footer">
             <button v-if="showCancel" class="btn-secondary" @click="close">{{ cancelText }}</button>
@@ -38,6 +41,10 @@ const props = defineProps({
   message: {
     type: String,
     default: ''
+  },
+  listItems: {
+    type: Array,
+    default: null
   },
   showCancel: {
     type: Boolean,
@@ -94,11 +101,11 @@ function handleOverlayClick() {
 
 .modal-content {
   background: var(--color-surface-elevated);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-2xl);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   width: 90%;
-  max-width: 400px;
+  max-width: 360px;
   overflow: hidden;
 }
 
@@ -106,13 +113,13 @@ function handleOverlayClick() {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-lg);
-  border-bottom: 1px solid var(--color-border-primary);
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .modal-header h3 {
   margin: 0;
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
 }
@@ -122,72 +129,95 @@ function handleOverlayClick() {
   border: none;
   color: var(--color-text-secondary);
   cursor: pointer;
-  padding: var(--space-xs);
-  border-radius: var(--border-radius-base);
+  padding: 4px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--duration-200);
+  transition: all var(--transition-default);
 }
 
 .close-btn:hover {
-  background: var(--color-surface-tertiary);
+  background: var(--color-surface-secondary);
   color: var(--color-text-primary);
 }
 
 .modal-body {
-  padding: var(--space-xl);
+  padding: var(--space-md) var(--space-lg);
 }
 
 .modal-body p {
   margin: 0;
   color: var(--color-text-secondary);
-  line-height: 1.6;
+  line-height: 1.5;
+  font-size: var(--font-size-sm);
+}
+
+.modal-list {
+  margin-top: var(--space-sm);
+  padding-left: var(--space-md);
+  color: var(--color-text-primary);
+  list-style: none;
+}
+
+.modal-list li {
+  margin: var(--space-xs) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  padding-left: var(--space-sm);
+  position: relative;
+}
+
+.modal-list li::before {
+  content: "•";
+  position: absolute;
+  left: -8px;
+  color: var(--color-text-tertiary);
 }
 
 .modal-footer {
-  padding: var(--space-lg);
-  border-top: 1px solid var(--color-border-primary);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   justify-content: flex-end;
   gap: var(--space-sm);
 }
 
 .btn-primary {
-  background: var(--color-brand-primary-500);
-  color: var(--color-text-inverse);
-  border: none;
-  border-radius: var(--border-radius-base);
-  padding: var(--space-sm) var(--space-xl);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: var(--space-xs) var(--space-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--duration-200);
-  min-width: 80px;
+  transition: all var(--transition-default);
+  min-width: 70px;
 }
 
 .btn-primary:hover {
-  background: var(--color-brand-primary-600);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-surface-secondary);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
 }
 
 .btn-secondary {
-  background: var(--color-surface-tertiary);
+  background: var(--color-surface-primary);
   color: var(--color-text-primary);
-  border: 1px solid var(--color-border-primary);
-  border-radius: var(--border-radius-base);
-  padding: var(--space-sm) var(--space-xl);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: var(--space-xs) var(--space-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--duration-200);
-  min-width: 80px;
+  transition: all var(--transition-default);
+  min-width: 70px;
 }
 
 .btn-secondary:hover {
-  background: var(--color-surface-elevated);
-  border-color: var(--color-brand-primary-500);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-surface-secondary);
 }
 
 /* Transitions */

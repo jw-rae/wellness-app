@@ -48,6 +48,8 @@ export function createPreset(preset) {
         isDefault: preset.isDefault || false,
         createdAt: preset.createdAt || now,
         updatedAt: preset.updatedAt || now,
+        // Preserve all other custom fields (selectedPattern, durationMinutes, theme settings, etc.)
+        ...preset
     };
 }
 

@@ -12,9 +12,11 @@ export const useSessionStore = defineStore('session', () => {
     const currentMode = ref(null); // 'breathing' | 'emdr' | 'sequence' | null
     const currentPreset = ref(null);
     const currentSequence = ref(null);
+    const sequencePresets = ref([]);
     const currentStepIndex = ref(0);
     const elapsedTime = ref(0); // in seconds
     const totalDuration = ref(0); // in seconds
+    const isPlayingSequence = ref(false);
 
     // Timer interval ID
     let timerInterval = null;
@@ -92,17 +94,45 @@ export const useSessionStore = defineStore('session', () => {
 
     function completeSession() {
         stopTimer();
-        // Keep session active but paused to show completion state
-        isActive.value = true;
-        isPaused.value = true;
+
+        // If playing a sequence, move to next preset
+        if (isPlayingSequence.value && currentStepIndex.value < sequencePresets.value.length - 1) {
+            nextStep();
+        } else {
+            // Keep session active but paused to show completion state
+            isActive.value = true;
+            isPaused.value = true;
+        }
+    }
+
+    function startSequence(sequence, presets) {
+        currentSequence.value = sequence;
+        sequencePresets.value = presets;
+        currentStepIndex.value = 0;
+        isPlayingSequence.value = true;
+
+        // Start with first preset
+        const firstPreset = presets[0];
+        startSession(firstPreset);
     }
 
     function nextStep() {
-        if (currentSequence.value && currentStepIndex.value < currentSequence.value.steps.length - 1) {
+        if (isPlayingSequence.value && currentStepIndex.value < sequencePresets.value.length - 1) {
             currentStepIndex.value += 1;
+            const nextPreset = sequencePresets.value[currentStepIndex.value];
+
+            // Start next preset
             elapsedTime.value = 0;
-            // Load next preset
-            // This will be implemented when sequence execution is built
+            currentPreset.value = nextPreset;
+            totalDuration.value = nextPreset.durationMinutes ? nextPreset.durationMinutes * 60 : 0;
+            isActive.value = true;
+            isPaused.value = false;
+            startTimer();
+        } else {
+            // Sequence complete
+            isPlayingSequence.value = false;
+            isActive.value = true;
+            isPaused.value = true;
         }
     }
 
@@ -113,9 +143,11 @@ export const useSessionStore = defineStore('session', () => {
         currentMode,
         currentPreset,
         currentSequence,
+        sequencePresets,
         currentStepIndex,
         elapsedTime,
         totalDuration,
+        isPlayingSequence,
 
         // Computed
         remainingTime,
@@ -124,6 +156,7 @@ export const useSessionStore = defineStore('session', () => {
 
         // Actions
         startSession,
+        startSequence,
         pauseSession,
         resumeSession,
         stopSession,

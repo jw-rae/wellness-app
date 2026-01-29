@@ -3,6 +3,7 @@
     <div class="card-content">
       <h3 class="preset-name">{{ sequence.name }}</h3>
       <p class="preset-type">{{ sequence.items.length }} step{{ sequence.items.length !== 1 ? 's' : '' }}</p>
+      <p v-if="missingPresets > 0" class="preset-warning">⚠️ {{ missingPresets }} missing preset{{ missingPresets !== 1 ? 's' : '' }}</p>
     </div>
     
     <div class="card-actions">
@@ -10,47 +11,58 @@
         <Play :size="20" />
         <span>Play</span>
       </button>
-      
-      <div class="secondary-actions">
-        <button class="btn-icon" @click="$emit('export', sequence)" title="Export sequence">
-          <Download :size="18" />
-        </button>
-        <button class="btn-icon btn-delete" @click="$emit('delete', sequence)" title="Delete sequence">
-          <Trash2 :size="18" />
-        </button>
-      </div>
+      <button class="btn-icon" @click="$emit('edit', sequence)" title="Edit sequence">
+        <Edit :size="18" />
+      </button>
+      <button class="btn-icon" @click="$emit('export', sequence)" title="Export sequence">
+        <Download :size="18" />
+      </button>
+      <button class="btn-icon btn-delete" @click="$emit('delete', sequence)" title="Delete sequence">
+        <Trash2 :size="18" />
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { Play, Download, Trash2 } from 'lucide-vue-next';
+import { computed } from 'vue';
+import { Play, Edit, Download, Trash2 } from 'lucide-vue-next';
 
-defineProps({
+const props = defineProps({
   sequence: {
     type: Object,
+    required: true
+  },
+  allPresets: {
+    type: Array,
     required: true
   }
 });
 
-defineEmits(['play', 'export', 'delete']);
+defineEmits(['play', 'edit', 'export', 'delete']);
+
+const missingPresets = computed(() => {
+  return props.sequence.items.filter(item => 
+    !props.allPresets.find(p => p.id === item.presetId)
+  ).length;
+});
 </script>
 
 <style scoped>
 .preset-card {
   background: var(--color-surface-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: var(--space-sm);
   display: flex;
   flex-direction: column;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
   transition: all var(--transition-default);
   height: 100%;
 }
 
 .preset-card:hover {
-  border-color: var(--color-border-hover);
+  border-color: rgba(255, 255, 255, 0.2);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -72,18 +84,23 @@ defineEmits(['play', 'export', 'delete']);
   margin: 0;
 }
 
+.preset-warning {
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+  margin: var(--space-xs) 0 0 0;
+}
+
 .card-actions {
   display: flex;
-  flex-direction: column;
   gap: var(--space-sm);
 }
 
 .btn-play {
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: var(--space-xs) var(--space-md);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
@@ -92,11 +109,12 @@ defineEmits(['play', 'export', 'delete']);
   justify-content: center;
   gap: var(--space-xs);
   transition: all var(--transition-default);
-  width: 100%;
+  flex: 1;
 }
 
 .btn-play:hover {
-  background: var(--color-accent-hover);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-surface-secondary);
   transform: translateY(-1px);
 }
 
@@ -104,27 +122,23 @@ defineEmits(['play', 'export', 'delete']);
   transform: translateY(0);
 }
 
-.secondary-actions {
-  display: flex;
-  gap: var(--space-xs);
-}
-
 .btn-icon {
-  flex: 1;
   background: var(--color-surface-primary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-sm);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: var(--space-xs);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-text-primary);
   transition: all var(--transition-default);
+  min-width: 36px;
+  min-height: 36px;
 }
 
 .btn-icon:hover {
-  border-color: var(--color-border-hover);
+  border-color: rgba(255, 255, 255, 0.3);
   background: var(--color-surface-secondary);
 }
 

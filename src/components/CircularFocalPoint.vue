@@ -37,6 +37,8 @@ const circleRadius = ref(60);
 const circleOpacity = ref(0.3);
 const animationPhase = ref('ready');
 const currentAffirmation = ref('');
+let currentCyclePhase = 0; // Track current position in breathing cycle
+let animationTimeout = null; // Track animation timeout for cancellation
 
 const props = defineProps({
   showInhaleExhale: {
@@ -50,6 +52,14 @@ const props = defineProps({
   affirmations: {
     type: String,
     default: ''
+  },
+  durationMinutes: {
+    type: Number,
+    default: 5
+  },
+  durationSeconds: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -88,7 +98,11 @@ const centerText = computed(() => {
 
 const formattedTime = computed(() => {
   if (!sessionStore.isActive) {
-    return '5:00';
+    // Show duration from controls when not active
+    const totalSeconds = (props.durationMinutes * 60) + props.durationSeconds;
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   }
   const remaining = sessionStore.remainingTime;
   const mins = Math.floor(remaining / 60);
@@ -143,6 +157,12 @@ onUnmounted(() => {
 });
 
 function startBreathingAnimation() {
+  // Clear any existing animation
+  if (animationTimeout) {
+    clearTimeout(animationTimeout);
+    animationTimeout = null;
+  }
+  
   // Simple breathing animation cycle
   const pattern = sessionStore.currentPreset?.breathingPattern || {
     inhale: 4,
@@ -151,7 +171,7 @@ function startBreathingAnimation() {
     holdAfterExhale: 4
   };
   
-  let cyclePhase = 0;
+  currentCyclePhase = 0; // Always start from inhale
   const allPhases = [
     { name: 'inhale', duration: pattern.inhale, radius: 80, opacity: 0.6 },
     { name: 'hold', duration: pattern.hold, radius: 80, opacity: 0.6 },
@@ -163,12 +183,16 @@ function startBreathingAnimation() {
   const phases = allPhases.filter(phase => phase.duration > 0);
   
   function animateCycle() {
-    if (!sessionStore.isActive || sessionStore.isPaused) {
-      setTimeout(animateCycle, 100);
+    if (!sessionStore.isActive) {
       return;
     }
     
-    const phase = phases[cyclePhase];
+    if (sessionStore.isPaused) {
+      animationTimeout = setTimeout(animateCycle, 100);
+      return;
+    }
+    
+    const phase = phases[currentCyclePhase];
     animationPhase.value = phase.name;
     circleRadius.value = phase.radius;
     circleOpacity.value = phase.opacity;
@@ -178,8 +202,8 @@ function startBreathingAnimation() {
       nextAffirmation();
     }
     
-    setTimeout(() => {
-      cyclePhase = (cyclePhase + 1) % phases.length;
+    animationTimeout = setTimeout(() => {
+      currentCyclePhase = (currentCyclePhase + 1) % phases.length;
       if (sessionStore.isActive) {
         animateCycle();
       }
@@ -198,6 +222,25 @@ watch(() => sessionStore.isActive, (active, wasActive) => {
     currentAffirmation.value = '';
   } else if (active && !wasActive) {
     // Session just became active, start animation
+    startBreathingAnimation();
+  }
+});
+
+// Watch for pause state to reset circle to neutral
+watch(() => sessionStore.isPaused, (paused) => {
+  if (paused) {
+    // Cancel current animation cycle
+    if (animationTimeout) {
+      clearTimeout(animationTimeout);
+      animationTimeout = null;
+    }
+    // Reset to neutral state when paused
+    animationPhase.value = 'ready';
+    circleRadius.value = 60;
+    circleOpacity.value = 0.3;
+    currentCyclePhase = 0;
+  } else if (sessionStore.isActive) {
+    // Restart animation from inhale when unpaused
     startBreathingAnimation();
   }
 });

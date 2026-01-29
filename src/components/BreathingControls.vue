@@ -28,9 +28,10 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onMounted } from 'vue';
 import { usePresetStore } from '../stores/presetStore.js';
 import { useSessionStore } from '../stores/sessionStore.js';
+import { exportPreset } from '../utils/exportUtils.js';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import BasicControlsSection from './breathing/BasicControlsSection.vue';
 import StyleSection from './breathing/StyleSection.vue';
@@ -53,6 +54,14 @@ defineExpose({
   styleRef,
   affirmationsRef,
   saveImportRef,
+});
+
+// Auto-collapse when sequence starts
+watch(() => sessionStore.isPlayingSequence, (isPlaying) => {
+  if (isPlaying) {
+    isCollapsed.value = true;
+    emit('collapse-changed', true);
+  }
 });
 
 function toggleSidebar() {
@@ -95,16 +104,21 @@ function handleSave() {
     return;
   }
   
-  const breathingPattern = basicControlsRef.value.getBreathingPattern();
-  const totalSeconds = basicControlsRef.value.getTotalSeconds();
-  
+  // Save with ALL settings (matching export format)
   presetStore.addPreset({
-    name: presetName,
+    id: `preset-${Date.now()}`,
+    name: presetName.trim(),
     type: 'breathing',
-    duration: totalSeconds,
-    breathingPattern,
-    affirmationText: affirmationsRef.value.affirmations || '',
-    description: `${basicControlsRef.value.selectedPattern} pattern, ${basicControlsRef.value.durationMinutes}m ${basicControlsRef.value.durationSeconds}s`,
+    selectedPattern: basicControlsRef.value.selectedPattern,
+    durationMinutes: basicControlsRef.value.durationMinutes,
+    durationSeconds: basicControlsRef.value.durationSeconds,
+    selectedTheme: styleRef.value.selectedTheme,
+    darkMode: styleRef.value.darkMode,
+    showInhaleExhale: styleRef.value.showInhaleExhale,
+    showTime: styleRef.value.showTime,
+    focalPointType: styleRef.value.focalPointType,
+    affirmations: affirmationsRef.value.affirmations || '',
+    created: new Date().toISOString()
   });
   
   saveImportRef.value.presetName = '';
@@ -131,45 +145,21 @@ function handleImport() {
           return;
         }
         
-        // Apply breathing pattern
-        if (preset.selectedPattern) {
-          basicControlsRef.value.selectedPattern = preset.selectedPattern;
-        }
+        // Apply preset to UI
+        applyPresetToUI(preset);
         
-        // Apply duration
-        if (preset.durationMinutes !== undefined) {
-          basicControlsRef.value.durationMinutes = preset.durationMinutes;
-        }
-        if (preset.durationSeconds !== undefined) {
-          basicControlsRef.value.durationSeconds = preset.durationSeconds;
-        }
-        
-        // Apply style settings
-        if (preset.selectedTheme) {
-          styleRef.value.selectedTheme = preset.selectedTheme;
-          document.documentElement.setAttribute('data-theme', preset.selectedTheme);
-        }
-        if (preset.darkMode !== undefined) {
-          styleRef.value.darkMode = preset.darkMode;
-          if (preset.darkMode) {
-            styleRef.value.setDarkMode();
-          } else {
-            styleRef.value.setLightMode();
+        // Add to preset store if it has a name and isn't already there
+        if (preset.name) {
+          const existingPreset = presetStore.presets.find(p => p.id === preset.id);
+          if (!existingPreset) {
+            // Ensure preset has all required fields
+            const completePreset = {
+              ...preset,
+              id: preset.id || `preset-${Date.now()}`,
+              created: preset.created || new Date().toISOString()
+            };
+            presetStore.addPreset(completePreset);
           }
-        }
-        if (preset.showInhaleExhale !== undefined) {
-          styleRef.value.showInhaleExhale = preset.showInhaleExhale;
-        }
-        if (preset.showTime !== undefined) {
-          styleRef.value.showTime = preset.showTime;
-        }
-        if (preset.focalPointType) {
-          styleRef.value.focalPointType = preset.focalPointType;
-        }
-        
-        // Apply affirmations
-        if (preset.affirmations) {
-          affirmationsRef.value.affirmations = preset.affirmations;
         }
         
         saveImportRef.value.showAlert('success', 'Preset imported successfully!');
@@ -184,11 +174,53 @@ function handleImport() {
   input.click();
 }
 
-function handleExport() {
-  const date = new Date();
-  const dateStr = date.toISOString().split('T')[0].replace(/-/g, '');
+function applyPresetToUI(preset) {
+  // Apply breathing pattern
+  if (preset.selectedPattern) {
+    basicControlsRef.value.selectedPattern = preset.selectedPattern;
+  }
   
+  // Apply duration
+  if (preset.durationMinutes !== undefined) {
+    basicControlsRef.value.durationMinutes = preset.durationMinutes;
+  }
+  if (preset.durationSeconds !== undefined) {
+    basicControlsRef.value.durationSeconds = preset.durationSeconds;
+  }
+  
+  // Apply style settings
+  if (preset.selectedTheme) {
+    styleRef.value.selectedTheme = preset.selectedTheme;
+    document.documentElement.setAttribute('data-theme', preset.selectedTheme);
+  }
+  if (preset.darkMode !== undefined) {
+    styleRef.value.darkMode = preset.darkMode;
+    if (preset.darkMode) {
+      styleRef.value.setDarkMode();
+    } else {
+      styleRef.value.setLightMode();
+    }
+  }
+  if (preset.showInhaleExhale !== undefined) {
+    styleRef.value.showInhaleExhale = preset.showInhaleExhale;
+  }
+  if (preset.showTime !== undefined) {
+    styleRef.value.showTime = preset.showTime;
+  }
+  if (preset.focalPointType) {
+    styleRef.value.focalPointType = preset.focalPointType;
+  }
+  
+  // Apply affirmations
+  if (preset.affirmations) {
+    affirmationsRef.value.affirmations = preset.affirmations;
+  }
+}
+
+function handleExport() {
   const preset = {
+    id: `preset-${Date.now()}`,
+    name: saveImportRef.value.presetName || 'Breathing Session',
     type: 'breathing',
     selectedPattern: basicControlsRef.value.selectedPattern,
     durationMinutes: basicControlsRef.value.durationMinutes,
@@ -199,19 +231,11 @@ function handleExport() {
     showTime: styleRef.value.showTime,
     focalPointType: styleRef.value.focalPointType,
     affirmations: affirmationsRef.value.affirmations || '',
-    exportedAt: date.toISOString(),
+    created: new Date().toISOString()
   };
   
-  const json = JSON.stringify(preset, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `breathing_${dateStr}_preset.json`;
-  a.click();
-  
-  URL.revokeObjectURL(url);
+  // Use the unified export utility
+  exportPreset(preset);
 }
 </script>
 

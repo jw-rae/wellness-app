@@ -32,6 +32,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useSessionStore } from '../../stores/sessionStore.js';
+import { usePresetStore } from '../../stores/presetStore.js';
 import { ChevronLeft, ChevronRight } from 'lucide-vue-next';
 import BasicControlsSection from './BasicControlsSection.vue';
 import StyleSection from './StyleSection.vue';
@@ -40,6 +41,7 @@ import AffirmationsSection from './AffirmationsSection.vue';
 import SaveImportSection from './SaveImportSection.vue';
 
 const sessionStore = useSessionStore();
+const presetStore = usePresetStore();
 
 const isCollapsed = ref(false);
 
@@ -51,6 +53,14 @@ const affirmationsRef = ref(null);
 const saveImportRef = ref(null);
 
 const emit = defineEmits(['collapse-changed']);
+
+// Auto-collapse when sequence starts
+watch(() => sessionStore.isPlayingSequence, (isPlaying) => {
+  if (isPlaying) {
+    isCollapsed.value = true;
+    emit('collapse-changed', true);
+  }
+});
 
 // Computed properties to access child component values
 const bpm = computed(() => basicControlsRef.value?.bpm || 30);
@@ -111,6 +121,8 @@ function handleSave() {
   }
   
   const preset = {
+    id: `preset-${Date.now()}`,
+    name: presetName.trim(),
     type: 'bilateral',
     bpm: bpm.value,
     durationMinutes: durationMinutes.value,
@@ -121,11 +133,10 @@ function handleSave() {
     showTime: showTime.value,
     affirmations: affirmations.value || '',
     affirmationInterval: affirmationInterval.value,
+    created: new Date().toISOString()
   };
   
-  const savedPresets = JSON.parse(localStorage.getItem('breathingPresets') || '[]');
-  savedPresets.push({ name: presetName.trim(), ...preset });
-  localStorage.setItem('breathingPresets', JSON.stringify(savedPresets));
+  presetStore.addPreset(preset);
   
   saveImportRef.value.presetName = '';
   saveImportRef.value.showAlert('success', 'Preset saved!');

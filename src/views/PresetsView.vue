@@ -45,7 +45,9 @@
       <SequencesTab
         v-else-if="activeTab === 'sequences'"
         :sequences="sequences"
+        :all-presets="allPresets"
         @play="handlePlaySequence"
+        @edit="handleEditSequence"
         @export="handleExportSequence"
         @delete="handleDeleteSequence"
       />
@@ -56,6 +58,7 @@
         :available-presets="allPresets"
         v-model:sequence-name="sequenceName"
         :sequence-items="sequenceItems"
+        :is-editing="isEditingSequence"
         @add="addToSequence"
         @remove="removeFromSequence"
         @toggle-visibility="toggleItemVisibility"
@@ -77,6 +80,15 @@
       cancel-text="Cancel"
       @confirm="confirmDeleteAction"
     />
+
+    <!-- Cannot Delete Modal -->
+    <Modal 
+      v-model="showCannotDeleteModal" 
+      title="Cannot Delete Preset" 
+      :message="cannotDeleteMessage"
+      :list-items="affectedSequencesList"
+      confirm-text="OK"
+    />
   </div>
 </template>
 
@@ -97,6 +109,9 @@ const { sequences, loadSequences, addSequence, deleteSequence: removeSequence } 
 
 const activeTab = ref('presets');
 const showDeleteModal = ref(false);
+const showCannotDeleteModal = ref(false);
+const cannotDeleteMessage = ref('');
+const affectedSequencesList = ref([]);
 const presetToDelete = ref(null);
 const sequenceToDelete = ref(null);
 
@@ -118,6 +133,10 @@ const deleteMessage = computed(() => {
   return '';
 });
 
+const isEditingSequence = computed(() => {
+  return !!sequenceItems.value.editingSequenceId;
+});
+
 onMounted(() => {
   presetStore.initializePresets();
   loadSequences();
@@ -125,9 +144,12 @@ onMounted(() => {
 
 // Preset handlers
 function handlePlayPreset(preset) {
+  // Store preset to be loaded by the view (same as import/drag-drop)
   if (preset.type === 'breathing') {
+    sessionStorage.setItem('pendingBreathingPreset', JSON.stringify(preset));
     router.push('/breathing');
   } else if (preset.type === 'bilateral' || preset.type === 'emdr') {
+    sessionStorage.setItem('pendingBilateralPreset', JSON.stringify(preset));
     router.push('/bilateral');
   }
 }
@@ -137,6 +159,18 @@ function handleExportPreset(preset) {
 }
 
 function handleDeletePreset(preset) {
+  // Check if preset is used in any sequence
+  const usedInSequences = sequences.value.filter(seq => 
+    seq.items.some(item => item.presetId === preset.id)
+  );
+  
+  if (usedInSequences.length > 0) {
+    cannotDeleteMessage.value = `Cannot delete preset '${preset.name}' because it is used in ${usedInSequences.length} sequence${usedInSequences.length > 1 ? 's' : ''}:`;
+    affectedSequencesList.value = usedInSequences.map(s => s.name);
+    showCannotDeleteModal.value = true;
+    return;
+  }
+  
   presetToDelete.value = preset;
   sequenceToDelete.value = null;
   showDeleteModal.value = true;
@@ -144,15 +178,52 @@ function handleDeletePreset(preset) {
 
 function deletePreset() {
   if (presetToDelete.value) {
-    presetStore.deletePreset(presetToDelete.value.id);
+    const presetId = presetToDelete.value.id;
+    presetStore.deletePreset(presetId);
+    
+    // Check if any sequences use this preset
+    const affectedSequences = sequences.value.filter(seq => 
+      seq.items.some(item => item.presetId === presetId)
+    );
+    
+    if (affectedSequences.length > 0) {
+      console.warn(`Preset deleted. ${affectedSequences.length} sequence(s) contain this preset:`, 
+        affectedSequences.map(s => s.name));
+    }
+    
     presetToDelete.value = null;
   }
 }
 
 // Sequence handlers
 function handlePlaySequence(sequence) {
-  // TODO: Implement sequence playback
-  console.log('Playing sequence:', sequence);
+  // Get all presets that are part of this sequence
+  const sequencePresets = sequence.items
+    .map(item => {
+      const preset = presetStore.presets.find(p => p.id === item.presetId);
+      if (!preset) {
+        console.warn(`Preset ${item.presetId} not found in sequence ${sequence.name}`);
+        return null;
+      }
+      return { ...preset, visible: item.visible };
+    })
+    .filter(p => p !== null && p.visible);
+  
+  if (sequencePresets.length === 0) {
+    alert('This sequence contains no valid presets. Some presets may have been deleted.');
+    return;
+  }
+  
+  // Start sequence playback
+  sessionStore.startSequence(sequence, sequencePresets);
+  
+  // Navigate to appropriate view based on first preset type
+  const firstPreset = sequencePresets[0];
+  if (firstPreset.type === 'breathing') {
+    router.push('/breathing');
+  } else if (firstPreset.type === 'bilateral' || firstPreset.type === 'emdr') {
+    router.push('/bilateral');
+  }
 }
 
 function handleExportSequence(sequence) {
@@ -163,6 +234,30 @@ function handleDeleteSequence(sequence) {
   sequenceToDelete.value = sequence;
   presetToDelete.value = null;
   showDeleteModal.value = true;
+}
+
+function handleEditSequence(sequence) {
+  // Load sequence into builder
+  sequenceName.value = sequence.name;
+  sequenceItems.value = sequence.items
+    .map(item => {
+      const preset = allPresets.value.find(p => p.id === item.presetId);
+      if (preset) {
+        return {
+          preset,
+          visible: item.visible,
+          tempId: `item-${tempIdCounter++}`
+        };
+      }
+      return null;
+    })
+    .filter(item => item !== null);
+  
+  // Store the sequence ID for updating instead of creating new
+  sequenceItems.value.editingSequenceId = sequence.id;
+  
+  // Switch to builder tab
+  activeTab.value = 'builder';
 }
 
 function deleteSequenceAction() {
@@ -233,17 +328,44 @@ function createSequence() {
     return;
   }
   
-  const newSequence = {
-    id: `seq-${Date.now()}`,
-    name: sequenceName.value,
-    items: sequenceItems.value.map(item => ({
-      presetId: item.preset.id,
-      visible: item.visible
-    })),
-    created: new Date().toISOString()
-  };
+  const editingId = sequenceItems.value.editingSequenceId;
   
-  addSequence(newSequence);
+  // Check for duplicate names (excluding current sequence if editing)
+  const duplicateName = sequences.value.find(s => 
+    s.name.toLowerCase() === sequenceName.value.trim().toLowerCase() && 
+    s.id !== editingId
+  );
+  
+  if (duplicateName) {
+    alert(`A sequence with the name "${sequenceName.value}" already exists. Please choose a different name.`);
+    return;
+  }
+  
+  if (editingId) {
+    // Update existing sequence
+    const existingSequence = sequences.value.find(s => s.id === editingId);
+    if (existingSequence) {
+      existingSequence.name = sequenceName.value;
+      existingSequence.items = sequenceItems.value.map(item => ({
+        presetId: item.preset.id,
+        visible: item.visible
+      }));
+      saveSequences();
+    }
+  } else {
+    // Create new sequence
+    const newSequence = {
+      id: `seq-${Date.now()}`,
+      name: sequenceName.value,
+      items: sequenceItems.value.map(item => ({
+        presetId: item.preset.id,
+        visible: item.visible
+      })),
+      created: new Date().toISOString()
+    };
+    
+    addSequence(newSequence);
+  }
   
   // Reset builder
   sequenceName.value = '';

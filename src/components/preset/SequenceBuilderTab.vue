@@ -31,6 +31,13 @@
             class="sequence-name-input" 
             placeholder="Enter sequence name"
           />
+          <button 
+            class="btn-create-sequence" 
+            @click="$emit('create')"
+            :disabled="sequenceItems.length === 0"
+          >
+            {{ isEditing ? 'Save Sequence' : 'Create Sequence' }}
+          </button>
         </div>
         
         <div 
@@ -74,12 +81,6 @@
             </div>
           </div>
         </div>
-
-        <div v-if="sequenceItems.length > 0" class="sequence-footer">
-          <button class="btn-create-sequence" @click="$emit('create')">
-            Create Sequence
-          </button>
-        </div>
       </div>
     </div>
   </div>
@@ -100,6 +101,10 @@ defineProps({
   sequenceItems: {
     type: Array,
     required: true
+  },
+  isEditing: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -212,11 +217,14 @@ function getPresetTypeLabel(type) {
 }
 
 .sequence-header {
+  display: flex;
+  gap: var(--space-sm);
   margin-bottom: var(--space-md);
+  align-items: center;
 }
 
 .sequence-name-input {
-  width: 100%;
+  flex: 1;
   padding: var(--space-sm) var(--space-md);
   background: var(--color-surface-primary);
   border: 1px solid var(--color-border);
@@ -224,6 +232,39 @@ function getPresetTypeLabel(type) {
   color: var(--color-text-primary);
   font-size: var(--font-size-base);
   transition: all var(--transition-default);
+  height: 40px;
+}
+
+.btn-create-sequence {
+  background: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: var(--space-sm) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-default);
+  white-space: nowrap;
+  height: 40px;
+}
+
+.btn-create-sequence:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.3);
+  background: var(--color-surface-secondary);
+  transform: translateY(-1px);
+}
+
+.btn-create-sequence:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-create-sequence:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .sequence-name-input:focus {
@@ -342,28 +383,6 @@ function getPresetTypeLabel(type) {
   margin-top: var(--space-md);
   padding-top: var(--space-md);
   border-top: 1px solid var(--color-border);
-}
-
-.btn-create-sequence {
-  width: 100%;
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  padding: var(--space-sm) var(--space-md);
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-default);
-}
-
-.btn-create-sequence:hover {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
-.btn-create-sequence:active {
-  transform: translateY(0);
 }
 
 @media (max-width: 768px) {

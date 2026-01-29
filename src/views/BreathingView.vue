@@ -17,6 +17,8 @@
         :showInhaleExhale="styleSettings.showInhaleExhale"
         :showTime="styleSettings.showTime"
         :affirmations="affirmationSettings.text"
+        :durationMinutes="durationSettings.minutes"
+        :durationSeconds="durationSettings.seconds"
       />
       
       <div v-if="isDragOver" class="drop-overlay">
@@ -38,12 +40,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { usePresetStore } from '../stores/presetStore.js';
 import { Upload } from 'lucide-vue-next';
 import BreathingControls from '../components/BreathingControls.vue';
 import CircularFocalPoint from '../components/CircularFocalPoint.vue';
 import Modal from '../components/ui/Modal.vue';
 
 const router = useRouter();
+const presetStore = usePresetStore();
 const controlsRef = ref(null);
 const isPanelCollapsed = ref(false);
 const isDragOver = ref(false);
@@ -66,8 +70,20 @@ const affirmationSettings = computed(() => {
   };
 });
 
+const durationSettings = computed(() => {
+  // Need to access .value because durationMinutes/durationSeconds are refs
+  const minutes = controlsRef.value?.basicControlsRef?.durationMinutes?.value ?? 
+                  controlsRef.value?.basicControlsRef?.durationMinutes ?? 5;
+  const seconds = controlsRef.value?.basicControlsRef?.durationSeconds?.value ?? 
+                  controlsRef.value?.basicControlsRef?.durationSeconds ?? 0;
+  return {
+    minutes,
+    seconds,
+  };
+});
+
 onMounted(() => {
-  // Check for pending preset from bilateral view drag-drop
+  // Check for pending preset from library or bilateral view
   const pendingPreset = sessionStorage.getItem('pendingBreathingPreset');
   if (pendingPreset) {
     sessionStorage.removeItem('pendingBreathingPreset');
@@ -129,6 +145,19 @@ function handleDrop(e) {
       if (preset.type === 'breathing') {
         try {
           loadBreathingPreset(preset);
+          
+          // Add to preset store if it has a name and isn't already there
+          if (preset.name) {
+            const existingPreset = presetStore.presets.find(p => p.id === preset.id);
+            if (!existingPreset) {
+              const completePreset = {
+                ...preset,
+                id: preset.id || `preset-${Date.now()}`,
+                created: preset.created || new Date().toISOString()
+              };
+              presetStore.addPreset(completePreset);
+            }
+          }
         } catch (error) {
           console.error('Error loading preset:', error);
           showError('Load Error', 'Failed to apply preset settings');
