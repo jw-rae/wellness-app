@@ -13,7 +13,8 @@
             <p>{{ message }}</p>
           </div>
           <div class="modal-footer">
-            <button class="btn-primary" @click="close">OK</button>
+            <button v-if="showCancel" class="btn-secondary" @click="close">{{ cancelText }}</button>
+            <button class="btn-primary" @click="confirm">{{ confirmText }}</button>
           </div>
         </div>
       </div>
@@ -37,10 +38,22 @@ const props = defineProps({
   message: {
     type: String,
     default: ''
+  },
+  showCancel: {
+    type: Boolean,
+    default: false
+  },
+  confirmText: {
+    type: String,
+    default: 'OK'
+  },
+  cancelText: {
+    type: String,
+    default: 'Cancel'
   }
 });
 
-const emit = defineEmits(['update:modelValue', 'close']);
+const emit = defineEmits(['update:modelValue', 'close', 'confirm']);
 
 const isOpen = ref(props.modelValue);
 
@@ -52,6 +65,11 @@ function close() {
   isOpen.value = false;
   emit('update:modelValue', false);
   emit('close');
+}
+
+function confirm() {
+  emit('confirm');
+  close();
 }
 
 function handleOverlayClick() {
@@ -152,6 +170,24 @@ function handleOverlayClick() {
   background: var(--color-brand-primary-600);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--color-surface-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--border-radius-base);
+  padding: var(--space-sm) var(--space-xl);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-200);
+  min-width: 80px;
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-elevated);
+  border-color: var(--color-brand-primary-500);
 }
 
 /* Transitions */
