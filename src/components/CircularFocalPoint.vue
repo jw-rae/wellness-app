@@ -4,13 +4,53 @@
     
     <div class="circular-focal-point">
       <svg viewBox="0 0 200 200" class="circle-svg">
+        <defs>
+          <radialGradient id="circleGradient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" :style="{ stopColor: 'var(--color-brand-primary-300)', stopOpacity: 0.9 }" />
+            <stop offset="50%" :style="{ stopColor: 'var(--color-brand-primary-500)', stopOpacity: 0.7 }" />
+            <stop offset="100%" :style="{ stopColor: 'var(--color-brand-primary-700)', stopOpacity: 0.5 }" />
+          </radialGradient>
+          <filter id="glowFilter">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
         <circle
+          v-if="props.focalPointType === 'solid'"
           ref="circleElement"
           cx="100"
           cy="100"
           :r="circleRadius"
           :class="['breathing-circle', animationPhase]"
           fill="var(--color-brand-primary-500)"
+          :opacity="circleOpacity"
+          :style="{ transition: transitionDuration > 0 ? `r ${transitionDuration}s ease-in-out, opacity ${transitionDuration}s ease-in-out` : 'none' }"
+        />
+        <circle
+          v-else-if="props.focalPointType === 'glow'"
+          ref="circleElement"
+          cx="100"
+          cy="100"
+          :r="circleRadius"
+          :class="['breathing-circle', animationPhase]"
+          fill="none"
+          stroke="var(--color-brand-primary-500)"
+          :stroke-width="4"
+          :opacity="circleOpacity"
+          filter="url(#glowFilter)"
+          :style="{ transition: transitionDuration > 0 ? `r ${transitionDuration}s ease-in-out, opacity ${transitionDuration}s ease-in-out, stroke-width ${transitionDuration}s ease-in-out` : 'none' }"
+        />
+        <circle
+          v-else-if="props.focalPointType === 'gradient'"
+          ref="circleElement"
+          cx="100"
+          cy="100"
+          :r="circleRadius"
+          :class="['breathing-circle', animationPhase]"
+          fill="url(#circleGradient)"
           :opacity="circleOpacity"
           :style="{ transition: transitionDuration > 0 ? `r ${transitionDuration}s ease-in-out, opacity ${transitionDuration}s ease-in-out` : 'none' }"
         />
@@ -66,6 +106,10 @@ const props = defineProps({
   durationSeconds: {
     type: Number,
     default: 0
+  },
+  focalPointType: {
+    type: String,
+    default: 'solid'
   }
 });
 

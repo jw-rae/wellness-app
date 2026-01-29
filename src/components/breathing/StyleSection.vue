@@ -71,7 +71,7 @@ const selectedTheme = ref('pink');
 const darkMode = ref(true);
 const showInhaleExhale = ref(true);
 const showTime = ref(true);
-const focalPointType = ref('circle');
+const focalPointType = ref('solid');
 
 const themeOptions = [
   { value: 'default', label: 'Default' },
@@ -83,9 +83,9 @@ const themeOptions = [
 ];
 
 const focalPointOptions = [
-  { value: 'circle', label: 'Circle' },
-  { value: 'square', label: 'Square' },
-  { value: 'star', label: 'Star' },
+  { value: 'solid', label: 'Solid Circle' },
+  { value: 'glow', label: 'Glowing Border' },
+  { value: 'gradient', label: 'Gradient Fill' },
 ];
 
 watch(selectedTheme, (newTheme) => {

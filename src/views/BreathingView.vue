@@ -19,6 +19,7 @@
         :affirmations="affirmationSettings.text"
         :durationMinutes="durationSettings.minutes"
         :durationSeconds="durationSettings.seconds"
+        :focalPointType="styleSettings.focalPointType"
       />
       
       <div v-if="isDragOver" class="drop-overlay">
@@ -61,6 +62,7 @@ const styleSettings = computed(() => {
   return {
     showInhaleExhale: controlsRef.value?.styleRef?.showInhaleExhale ?? true,
     showTime: controlsRef.value?.styleRef?.showTime ?? true,
+    focalPointType: controlsRef.value?.styleRef?.focalPointType ?? 'solid',
   };
 });
 
