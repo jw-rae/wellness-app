@@ -5,12 +5,14 @@
     <div class="circular-focal-point">
       <svg viewBox="0 0 200 200" class="circle-svg">
         <circle
+          ref="circleElement"
           cx="100"
           cy="100"
           :r="circleRadius"
           :class="['breathing-circle', animationPhase]"
           fill="var(--color-brand-primary-500)"
           :opacity="circleOpacity"
+          :style="{ transition: transitionDuration > 0 ? `r ${transitionDuration}s ease-in-out, opacity ${transitionDuration}s ease-in-out` : 'none' }"
         />
       </svg>
       
@@ -33,12 +35,16 @@ import { usePresetStore } from '../stores/presetStore.js';
 const sessionStore = useSessionStore();
 const presetStore = usePresetStore();
 
-const circleRadius = ref(60);
+const circleElement = ref(null);
+const circleRadius = ref(40); // Start at exhale (min)
 const circleOpacity = ref(0.3);
 const animationPhase = ref('ready');
 const currentAffirmation = ref('');
+const transitionDuration = ref(0); // Dynamic transition duration
 let currentCyclePhase = 0; // Track current position in breathing cycle
 let animationTimeout = null; // Track animation timeout for cancellation
+let phaseStartTime = 0; // Track when current phase started
+let currentPhaseData = null; // Track current phase data (target radius, duration, etc)
 
 const props = defineProps({
   showInhaleExhale: {
@@ -173,10 +179,10 @@ function startBreathingAnimation() {
   
   currentCyclePhase = 0; // Always start from inhale
   const allPhases = [
-    { name: 'inhale', duration: pattern.inhale, radius: 80, opacity: 0.6 },
-    { name: 'hold', duration: pattern.hold, radius: 80, opacity: 0.6 },
-    { name: 'exhale', duration: pattern.exhale, radius: 40, opacity: 0.3 },
-    { name: 'hold', duration: pattern.holdAfterExhale, radius: 40, opacity: 0.3 },
+    { name: 'inhale', duration: pattern.inhale, radius: 80, opacity: 0.6, hasTransition: true, startRadius: 40 },
+    { name: 'hold', duration: pattern.hold, radius: 80, opacity: 0.6, hasTransition: false, startRadius: 80 },
+    { name: 'exhale', duration: pattern.exhale, radius: 40, opacity: 0.3, hasTransition: true, startRadius: 80 },
+    { name: 'hold', duration: pattern.holdAfterExhale, radius: 40, opacity: 0.3, hasTransition: false, startRadius: 40 },
   ];
   
   // Filter out phases with 0 duration
@@ -193,7 +199,19 @@ function startBreathingAnimation() {
     }
     
     const phase = phases[currentCyclePhase];
+    currentPhaseData = phase;
+    phaseStartTime = Date.now();
+    
     animationPhase.value = phase.name;
+    
+    // Set transition duration based on whether this phase has movement
+    if (phase.hasTransition) {
+      transitionDuration.value = phase.duration;
+    } else {
+      transitionDuration.value = 0;
+    }
+    
+    // Set target size and opacity
     circleRadius.value = phase.radius;
     circleOpacity.value = phase.opacity;
     
@@ -216,7 +234,8 @@ function startBreathingAnimation() {
 watch(() => sessionStore.isActive, (active, wasActive) => {
   if (!active) {
     animationPhase.value = 'ready';
-    circleRadius.value = 60;
+    transitionDuration.value = 0;
+    circleRadius.value = 40; // Min radius (full exhale)
     circleOpacity.value = 0.3;
     hasStartedSession = false;
     currentAffirmation.value = '';
@@ -234,11 +253,40 @@ watch(() => sessionStore.isPaused, (paused) => {
       clearTimeout(animationTimeout);
       animationTimeout = null;
     }
-    // Reset to neutral state when paused
+    
+    // Calculate current radius based on phase timing
+    let currentRadius = circleRadius.value; // default to target
+    
+    if (currentPhaseData && currentPhaseData.hasTransition && phaseStartTime > 0) {
+      // Calculate how much time has elapsed in this phase
+      const elapsedTime = (Date.now() - phaseStartTime) / 1000; // in seconds
+      const progress = Math.min(elapsedTime / currentPhaseData.duration, 1); // 0 to 1
+      
+      // Linear interpolation between start and target radius
+      const startRadius = currentPhaseData.startRadius;
+      const targetRadius = currentPhaseData.radius;
+      currentRadius = startRadius + (targetRadius - startRadius) * progress;
+    }
+    
+    // Stop transitions immediately
+    transitionDuration.value = 0;
     animationPhase.value = 'ready';
-    circleRadius.value = 60;
-    circleOpacity.value = 0.3;
+    
+    // Set to calculated current radius
+    circleRadius.value = currentRadius;
+    
+    // Enable smooth transition to min radius
+    requestAnimationFrame(() => {
+      transitionDuration.value = 1;
+      requestAnimationFrame(() => {
+        circleRadius.value = 40; // Min radius (full exhale)
+        circleOpacity.value = 0.3;
+      });
+    });
+    
     currentCyclePhase = 0;
+    currentPhaseData = null;
+    phaseStartTime = 0;
   } else if (sessionStore.isActive) {
     // Restart animation from inhale when unpaused
     startBreathingAnimation();
