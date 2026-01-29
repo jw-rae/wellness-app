@@ -267,10 +267,17 @@ watch(() => sessionStore.isActive, (active, wasActive) => {
     stopAnimation();
     stopAffirmations();
   }
-});
+}, { immediate: true }); // Add immediate to check initial state
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
+  
+  // Start animation if session is already active
+  if (sessionStore.isActive) {
+    initAudio();
+    startAnimation();
+    startAffirmations();
+  }
 });
 
 onUnmounted(() => {
