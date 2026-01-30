@@ -17,6 +17,7 @@
             v-model.number="durationMinutes" 
             min="0" 
             max="60"
+            :disabled="sessionStore.isActive"
           />
           <span class="unit">min</span>
         </div>
@@ -26,6 +27,7 @@
             v-model.number="durationSeconds" 
             min="0" 
             max="59"
+            :disabled="sessionStore.isActive"
           />
           <span class="unit">sec</span>
         </div>
@@ -54,29 +56,43 @@ const selectedPattern = ref('box');
 const durationMinutes = ref(5);
 const durationSeconds = ref(0);
 
-// Store original duration to reset after session
-let originalMinutes = 5;
-let originalSeconds = 0;
+// Store initial/preset duration values to restore after session
+const initialMinutes = ref(5);
+const initialSeconds = ref(0);
+
+// Track if we're currently in a session to prevent updating initial values during countdown
+let isCountingDown = false;
 
 // Update duration inputs to show countdown during session
 watch(() => sessionStore.remainingTime, (remaining) => {
   if (sessionStore.isActive && !sessionStore.isPaused) {
     // Update inputs to show remaining time
+    isCountingDown = true;
     durationMinutes.value = Math.floor(remaining / 60);
     durationSeconds.value = remaining % 60;
   }
 });
 
-// Reset to original values when session ends
+// Capture initial values when session starts and reset when it ends
 watch(() => sessionStore.isActive, (active, wasActive) => {
-  if (!active && wasActive) {
-    // Session ended, reset to original values
-    durationMinutes.value = originalMinutes;
-    durationSeconds.value = originalSeconds;
-  } else if (active && !wasActive) {
-    // Session starting, store original values
-    originalMinutes = durationMinutes.value;
-    originalSeconds = durationSeconds.value;
+  if (active && !wasActive) {
+    // Session starting - capture current values as initial
+    initialMinutes.value = durationMinutes.value;
+    initialSeconds.value = durationSeconds.value;
+    isCountingDown = true;
+  } else if (!active && wasActive) {
+    // Session ended - reset to initial values
+    durationMinutes.value = initialMinutes.value;
+    durationSeconds.value = initialSeconds.value;
+    isCountingDown = false;
+  }
+});
+
+// Watch for manual changes to update initial values (only when not counting down)
+watch([durationMinutes, durationSeconds], ([newMin, newSec]) => {
+  if (!isCountingDown) {
+    initialMinutes.value = newMin;
+    initialSeconds.value = newSec;
   }
 });
 

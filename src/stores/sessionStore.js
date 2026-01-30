@@ -99,9 +99,15 @@ export const useSessionStore = defineStore('session', () => {
         if (isPlayingSequence.value && currentStepIndex.value < sequencePresets.value.length - 1) {
             nextStep();
         } else {
-            // Keep session active but paused to show completion state
-            isActive.value = true;
-            isPaused.value = true;
+            // End the session completely
+            isActive.value = false;
+            isPaused.value = false;
+            currentMode.value = null;
+            currentPreset.value = null;
+            currentSequence.value = null;
+            currentStepIndex.value = 0;
+            elapsedTime.value = 0;
+            totalDuration.value = 0;
         }
     }
 
