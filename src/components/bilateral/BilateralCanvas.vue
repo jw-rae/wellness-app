@@ -61,6 +61,14 @@ const props = defineProps({
   affirmationInterval: {
     type: Number,
     default: 15
+  },
+  durationMinutes: {
+    type: Number,
+    default: 5
+  },
+  durationSeconds: {
+    type: Number,
+    default: 0
   }
 });
 
@@ -74,15 +82,14 @@ let audioContext = null;
 let affirmationTimer = null;
 
 const formattedTime = computed(() => {
-  if (!sessionStore.isActive) {
-    const mins = Math.floor(sessionStore.totalDuration / 60);
-    const secs = sessionStore.totalDuration % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  }
-  const remaining = sessionStore.remainingTime;
-  const mins = Math.floor(remaining / 60);
-  const secs = remaining % 60;
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  // Always recalculate from props
+  const mins = props.durationMinutes || 0;
+  const secs = props.durationSeconds || 0;
+  console.log('BilateralCanvas formattedTime - props:', mins, secs);
+  const totalSeconds = (mins * 60) + secs;
+  const displayMins = Math.floor(totalSeconds / 60);
+  const displaySecs = totalSeconds % 60;
+  return `${displayMins}:${displaySecs.toString().padStart(2, '0')}`;
 });
 
 // Affirmation cycling logic

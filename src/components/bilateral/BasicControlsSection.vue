@@ -18,16 +18,28 @@
 
     <!-- Duration -->
     <div class="control-section">
-      <label for="duration">Duration</label>
-      <div class="input-with-unit">
-        <input 
-          id="duration"
-          type="number" 
-          v-model.number="durationMinutes" 
-          min="1" 
-          max="60"
-        />
-        <span class="unit">min</span>
+      <label>Session Duration</label>
+      <div class="duration-inputs">
+        <div class="input-with-unit">
+          <input 
+            type="number" 
+            v-model.number="durationMinutes" 
+            min="0" 
+            max="60"
+            :disabled="sessionStore.isActive"
+          />
+          <span class="unit">min</span>
+        </div>
+        <div class="input-with-unit">
+          <input 
+            type="number" 
+            v-model.number="durationSeconds" 
+            min="0" 
+            max="59"
+            :disabled="sessionStore.isActive"
+          />
+          <span class="unit">sec</span>
+        </div>
       </div>
     </div>
 
@@ -40,17 +52,64 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+import { useSessionStore } from '../../stores/sessionStore.js';
 import SessionControlButtons from '../ui/SessionControlButtons.vue';
+
+const sessionStore = useSessionStore();
 
 defineEmits(['start', 'togglePause', 'stop']);
 
 const bpm = ref(30);
 const durationMinutes = ref(5);
+const durationSeconds = ref(0);
+
+// Store initial/preset duration values to restore after session
+const initialMinutes = ref(5);
+const initialSeconds = ref(0);
+
+// Track if we're currently in a session to prevent updating initial values during countdown
+let isCountingDown = false;
+
+// Update duration inputs to show countdown during session
+watch(() => sessionStore.remainingTime, (remaining) => {
+  if (sessionStore.isActive && !sessionStore.isPaused) {
+    isCountingDown = true;
+    durationMinutes.value = Math.floor(remaining / 60);
+    durationSeconds.value = remaining % 60;
+  }
+});
+
+// Capture initial values when session starts and reset when it ends
+watch(() => sessionStore.isActive, (active, wasActive) => {
+  if (active && !wasActive) {
+    initialMinutes.value = durationMinutes.value;
+    initialSeconds.value = durationSeconds.value;
+    isCountingDown = true;
+  } else if (!active && wasActive) {
+    durationMinutes.value = initialMinutes.value;
+    durationSeconds.value = initialSeconds.value;
+    isCountingDown = false;
+  }
+});
+
+// Watch for manual changes to update initial values (only when not counting down)
+watch([durationMinutes, durationSeconds], ([newMin, newSec]) => {
+  if (!isCountingDown) {
+    initialMinutes.value = newMin;
+    initialSeconds.value = newSec;
+  }
+});
+
+function getTotalSeconds() {
+  return (durationMinutes.value * 60) + durationSeconds.value;
+}
 
 defineExpose({
   bpm,
   durationMinutes,
+  durationSeconds,
+  getTotalSeconds,
 });
 </script>
 
@@ -82,6 +141,12 @@ defineExpose({
 .value-display {
   color: var(--color-brand-primary-500);
   font-weight: var(--font-weight-bold);
+}
+
+.duration-inputs {
+  display: flex;
+  gap: 0;
+  width: 100%;
 }
 
 input[type="range"] {
@@ -124,10 +189,16 @@ input[type="range"]::-moz-range-thumb:hover {
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--color-brand-primary-500) 30%, transparent);
 }
 
+.duration-inputs {
+  display: flex;
+  gap: var(--space-sm);
+}
+
 .input-with-unit {
   display: flex;
   align-items: center;
   gap: var(--space-xs);
+  flex: 1;
 }
 
 .input-with-unit input {
@@ -147,6 +218,10 @@ input[type="range"]::-moz-range-thumb:hover {
   outline: none;
   border-color: var(--color-brand-primary-500);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand-primary-500) 20%, transparent);
+}
+
+.input-with-unit input:disabled {
+  opacity: 0.7;
 }
 
 .unit {

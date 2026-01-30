@@ -65,6 +65,7 @@ watch(() => sessionStore.isPlayingSequence, (isPlaying) => {
 // Computed properties to access child component values
 const bpm = computed(() => basicControlsRef.value?.bpm || 30);
 const durationMinutes = computed(() => basicControlsRef.value?.durationMinutes || 5);
+const durationSeconds = computed(() => basicControlsRef.value?.durationSeconds || 0);
 const visualMode = computed(() => styleRef.value?.visualMode || 'slide');
 const selectedTheme = computed(() => styleRef.value?.selectedTheme || 'pink');
 const darkMode = computed(() => styleRef.value?.darkMode || true);
@@ -86,10 +87,11 @@ function toggleSidebar() {
 }
 
 function handleStart() {
+  const totalSeconds = basicControlsRef.value?.getTotalSeconds() || 300;
   const preset = {
     name: 'Current Session',
     type: 'bilateral',
-    duration: durationMinutes.value * 60,
+    duration: totalSeconds,
     bpm: bpm.value,
     visualMode: visualMode.value,
     bilateralAudio: bilateralAudio.value,
@@ -126,6 +128,7 @@ function handleSave() {
     type: 'bilateral',
     bpm: bpm.value,
     durationMinutes: durationMinutes.value,
+    durationSeconds: durationSeconds.value,
     visualMode: visualMode.value,
     bilateralAudio: bilateralAudio.value,
     selectedTheme: selectedTheme.value,
@@ -150,6 +153,7 @@ function handleExport() {
     type: 'bilateral',
     bpm: bpm.value,
     durationMinutes: durationMinutes.value,
+    durationSeconds: durationSeconds.value,
     visualMode: visualMode.value,
     bilateralAudio: bilateralAudio.value,
     selectedTheme: selectedTheme.value,
@@ -214,6 +218,9 @@ function applyBilateralPreset(preset) {
     if (preset.durationMinutes !== undefined) {
       basicControlsRef.value.durationMinutes = preset.durationMinutes;
     }
+    if (preset.durationSeconds !== undefined) {
+      basicControlsRef.value.durationSeconds = preset.durationSeconds;
+    }
   }
   
   if (styleRef.value) {
@@ -252,8 +259,14 @@ function applyBilateralPreset(preset) {
 }
 
 defineExpose({
+  basicControlsRef,
+  styleRef,
+  audioRef,
+  affirmationsRef,
+  saveImportRef,
   bpm,
   durationMinutes,
+  durationSeconds,
   visualMode,
   bilateralAudio,
   selectedTheme,

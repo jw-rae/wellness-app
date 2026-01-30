@@ -20,6 +20,8 @@
         :showTime="bilateralSettings.showTime"
         :affirmations="bilateralSettings.affirmations"
         :affirmationInterval="bilateralSettings.affirmationInterval"
+        :durationMinutes="bilateralSettings.durationMinutes"
+        :durationSeconds="bilateralSettings.durationSeconds"
       />
       
       <div v-if="isDragOver" class="drop-overlay">
@@ -39,7 +41,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, unref } from 'vue';
 import { useRouter } from 'vue-router';
 import { Upload } from 'lucide-vue-next';
 import BilateralControls from '../components/bilateral/BilateralControls.vue';
@@ -57,13 +59,45 @@ const modalMessage = ref('');
 const emit = defineEmits(['panel-collapsed']);
 
 const bilateralSettings = computed(() => {
+  if (!controlsRef.value?.basicControlsRef) {
+    return {
+      bpm: 50,
+      visualMode: 'slide',
+      bilateralAudio: true,
+      showTime: true,
+      affirmations: '',
+      affirmationInterval: 15,
+      durationMinutes: 5,
+      durationSeconds: 0,
+    };
+  }
+  
+  const basicControls = controlsRef.value.basicControlsRef;
+  const styleControls = controlsRef.value.styleRef;
+  const audioControls = controlsRef.value.audioRef;
+  const affirmationsControls = controlsRef.value.affirmationsRef;
+  
+  // Force reactivity by accessing the ref values
+  const bpm = unref(basicControls.bpm);
+  const durationMinutes = unref(basicControls.durationMinutes);
+  const durationSeconds = unref(basicControls.durationSeconds);
+  const visualMode = unref(styleControls?.visualMode);
+  const showTime = unref(styleControls?.showTime);
+  const bilateralAudio = unref(audioControls?.bilateralAudio);
+  const affirmations = unref(affirmationsControls?.affirmations);
+  const affirmationInterval = unref(affirmationsControls?.affirmationInterval);
+  
+  console.log('BilateralView computed - duration:', durationMinutes, durationSeconds);
+  
   return {
-    bpm: controlsRef.value?.bpm ?? 50,
-    visualMode: controlsRef.value?.visualMode ?? 'slide',
-    bilateralAudio: controlsRef.value?.bilateralAudio ?? true,
-    showTime: controlsRef.value?.showTime ?? true,
-    affirmations: controlsRef.value?.affirmations ?? '',
-    affirmationInterval: controlsRef.value?.affirmationInterval ?? 15,
+    bpm: bpm ?? 50,
+    visualMode: visualMode ?? 'slide',
+    bilateralAudio: bilateralAudio ?? true,
+    showTime: showTime ?? true,
+    affirmations: affirmations ?? '',
+    affirmationInterval: affirmationInterval ?? 15,
+    durationMinutes: durationMinutes ?? 5,
+    durationSeconds: durationSeconds ?? 0,
   };
 });
 
