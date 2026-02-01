@@ -71,6 +71,24 @@ function toggleSidebar() {
 }
 
 function handleStart() {
+  // If sequence is loaded but not started yet, start it with the current preset
+  if (sessionStore.isPlayingSequence && !sessionStore.isActive && sessionStore.currentPreset) {
+    const preset = sessionStore.currentPreset;
+    console.log('Starting sequence preset:', preset);
+    const mode = preset.type === 'breathing' ? 'breathing' : 'bilateral';
+    sessionStore.startSession(mode, preset);
+    return;
+  }
+  
+  // If already active (sequence is running), just resume if paused
+  if (sessionStore.isActive && sessionStore.isPlayingSequence) {
+    if (sessionStore.isPaused) {
+      sessionStore.resumeSession();
+    }
+    return;
+  }
+  
+  // Start a new standalone session
   const breathingPattern = basicControlsRef.value.getBreathingPattern();
   const totalSeconds = basicControlsRef.value.getTotalSeconds();
   
@@ -82,6 +100,7 @@ function handleStart() {
     affirmationText: affirmationsRef.value.affirmations || '',
   };
   
+  console.log('Starting standalone preset:', preset);
   sessionStore.startSession('breathing', preset);
 }
 

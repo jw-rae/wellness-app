@@ -96,6 +96,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePresetStore } from '../stores/presetStore.js';
+import { useSessionStore } from '../stores/sessionStore.js';
 import { useSequences } from '../composables/useSequences.js';
 import { exportPreset, exportSequence } from '../utils/exportUtils.js';
 import Modal from '../components/ui/Modal.vue';
@@ -105,6 +106,7 @@ import SequenceBuilderTab from '../components/preset/SequenceBuilderTab.vue';
 
 const router = useRouter();
 const presetStore = usePresetStore();
+const sessionStore = useSessionStore();
 const { sequences, loadSequences, addSequence, deleteSequence: removeSequence } = useSequences();
 
 const activeTab = ref('presets');
@@ -207,6 +209,7 @@ function handlePlaySequence(sequence) {
         console.warn(`Preset ${item.presetId} not found in sequence ${sequence.name}`);
         return null;
       }
+      console.log('Loading preset from sequence:', preset);
       return { ...preset, visible: item.visible };
     })
     .filter(p => p !== null && p.visible);
@@ -215,6 +218,11 @@ function handlePlaySequence(sequence) {
     alert('This sequence contains no valid presets. Some presets may have been deleted.');
     return;
   }
+  
+  console.log('Sequence presets to play:', sequencePresets);
+  
+  // Set flag to collapse panel
+  sessionStorage.setItem('collapsePanel', 'true');
   
   // Start sequence playback
   sessionStore.startSequence(sequence, sequencePresets);

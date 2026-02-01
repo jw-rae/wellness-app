@@ -39,9 +39,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, unref } from 'vue';
+import { ref, computed, onMounted, nextTick, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { usePresetStore } from '../stores/presetStore.js';
+import { useSessionStore } from '../stores/sessionStore.js';
 import { Upload } from 'lucide-vue-next';
 import BreathingControls from '../components/BreathingControls.vue';
 import CircularFocalPoint from '../components/CircularFocalPoint.vue';
@@ -49,6 +50,7 @@ import Modal from '../components/ui/Modal.vue';
 
 const router = useRouter();
 const presetStore = usePresetStore();
+const sessionStore = useSessionStore();
 const controlsRef = ref(null);
 const isPanelCollapsed = ref(false);
 const isDragOver = ref(false);
@@ -88,6 +90,24 @@ const durationSettings = computed(() => {
     seconds,
   };
 });
+
+// Watch for sequence preset changes
+watch(() => sessionStore.currentPreset, (preset, oldPreset) => {
+  if (preset && sessionStore.isPlayingSequence) {
+    // Check if we need to navigate to a different view
+    if (preset.type === 'bilateral' || preset.type === 'emdr') {
+      router.push('/bilateral');
+      return;
+    }
+    
+    // Load the breathing preset
+    if (preset.type === 'breathing') {
+      nextTick(() => {
+        loadBreathingPreset(preset);
+      });
+    }
+  }
+}, { immediate: true });
 
 onMounted(() => {
   // Check for pending preset from library or bilateral view

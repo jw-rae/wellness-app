@@ -41,14 +41,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick, unref } from 'vue';
+import { ref, computed, onMounted, nextTick, unref, watch } from 'vue';
 import { useRouter } from 'vue-router';
+import { useSessionStore } from '../stores/sessionStore.js';
 import { Upload } from 'lucide-vue-next';
 import BilateralControls from '../components/bilateral/BilateralControls.vue';
 import BilateralCanvas from '../components/bilateral/BilateralCanvas.vue';
 import Modal from '../components/ui/Modal.vue';
 
 const router = useRouter();
+const sessionStore = useSessionStore();
 const controlsRef = ref(null);
 const isPanelCollapsed = ref(false);
 const isDragOver = ref(false);
@@ -87,8 +89,6 @@ const bilateralSettings = computed(() => {
   const affirmations = unref(affirmationsControls?.affirmations);
   const affirmationInterval = unref(affirmationsControls?.affirmationInterval);
   
-  console.log('BilateralView computed - duration:', durationMinutes, durationSeconds);
-  
   return {
     bpm: bpm ?? 50,
     visualMode: visualMode ?? 'slide',
@@ -100,6 +100,24 @@ const bilateralSettings = computed(() => {
     durationSeconds: durationSeconds ?? 0,
   };
 });
+
+// Watch for sequence preset changes
+watch(() => sessionStore.currentPreset, (preset, oldPreset) => {
+  if (preset && sessionStore.isPlayingSequence) {
+    // Check if we need to navigate to a different view
+    if (preset.type === 'breathing') {
+      router.push('/breathing');
+      return;
+    }
+    
+    // Load the bilateral/emdr preset
+    if (preset.type === 'bilateral' || preset.type === 'emdr') {
+      nextTick(() => {
+        controlsRef.value?.applyBilateralPreset(preset);
+      });
+    }
+  }
+}, { immediate: true });
 
 onMounted(() => {
   // Check for pending preset from breathing view drag-drop

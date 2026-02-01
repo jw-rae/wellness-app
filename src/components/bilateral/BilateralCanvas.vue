@@ -85,7 +85,6 @@ const formattedTime = computed(() => {
   // Always recalculate from props
   const mins = props.durationMinutes || 0;
   const secs = props.durationSeconds || 0;
-  console.log('BilateralCanvas formattedTime - props:', mins, secs);
   const totalSeconds = (mins * 60) + secs;
   const displayMins = Math.floor(totalSeconds / 60);
   const displaySecs = totalSeconds % 60;

@@ -68,7 +68,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { useSessionStore } from '../stores/sessionStore.js';
 import { usePresetStore } from '../stores/presetStore.js';
 
@@ -155,6 +155,15 @@ const formattedTime = computed(() => {
 });
 
 function startSession() {
+  // If a sequence is loaded, start it with the current preset
+  if (sessionStore.isPlayingSequence && sessionStore.currentPreset) {
+    const preset = sessionStore.currentPreset;
+    const mode = preset.type === 'breathing' ? 'breathing' : 'bilateral';
+    sessionStore.startSession(mode, preset);
+    return;
+  }
+  
+  // Otherwise start a standalone session with a default preset
   const defaultPreset = presetStore.breathingPresets[0];
   sessionStore.startSession('breathing', defaultPreset);
 }
@@ -184,6 +193,12 @@ function handleKeydown(event) {
     }
     
     event.preventDefault();
+    
+    // If sequence is loaded but not started, don't handle here
+    if (!sessionStore.isActive && sessionStore.isPlayingSequence) {
+      return;
+    }
+    
     if (!sessionStore.isActive) {
       startSession();
     } else {
@@ -280,6 +295,16 @@ watch(() => sessionStore.isActive, (active, wasActive) => {
   } else if (active && !wasActive) {
     // Session just became active, start animation
     startBreathingAnimation();
+  }
+});
+
+// Watch for preset changes during sequence playback
+watch(() => sessionStore.currentPreset, (preset, oldPreset) => {
+  if (preset && oldPreset && preset.id !== oldPreset.id && sessionStore.isActive && sessionStore.isPlayingSequence) {
+    // New preset in sequence, restart animation
+    nextTick(() => {
+      startBreathingAnimation();
+    });
   }
 });
 
