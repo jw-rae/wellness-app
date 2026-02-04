@@ -19,18 +19,18 @@
 
         <div class="view-toggle">
           <button 
-            :class="['view-btn', { active: viewMode === 'grid' }]"
-            @click="viewMode = 'grid'"
-            title="Grid view"
-          >
-            <Grid :size="18" />
-          </button>
-          <button 
             :class="['view-btn', { active: viewMode === 'table' }]"
             @click="viewMode = 'table'"
             title="Table view"
           >
             <List :size="18" />
+          </button>
+          <button 
+            :class="['view-btn', { active: viewMode === 'grid' }]"
+            @click="viewMode = 'grid'"
+            title="Grid view"
+          >
+            <Grid :size="18" />
           </button>
         </div>
       </div>
@@ -45,6 +45,7 @@
         @play="$emit('play', $event)"
         @export="$emit('export', $event)"
         @delete="$emit('delete', $event)"
+        @update="$emit('update', $event)"
       />
     </div>
 
@@ -65,7 +66,7 @@
               Date Created
               <span v-if="sortBy === 'date'">↓</span>
             </th>
-            <th>Actions</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -76,6 +77,7 @@
             @play="$emit('play', $event)"
             @export="$emit('export', $event)"
             @delete="$emit('delete', $event)"
+            @update="$emit('update', $event)"
           />
         </tbody>
       </table>
@@ -85,7 +87,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { Grid, List } from 'lucide-vue-next';
+import { Grid, List, Pencil } from 'lucide-vue-next';
 import PresetCard from './PresetCard.vue';
 import PresetTableRow from './PresetTableRow.vue';
 
@@ -96,9 +98,9 @@ const props = defineProps({
   }
 });
 
-defineEmits(['play', 'export', 'delete']);
+defineEmits(['play', 'export', 'delete', 'rename']);
 
-const viewMode = ref('grid');
+const viewMode = ref('table');
 const filterType = ref('all');
 const sortBy = ref('name');
 
@@ -118,13 +120,13 @@ const filteredAndSortedPresets = computed(() => {
   // Sort
   const sorted = [...filtered].sort((a, b) => {
     if (sortBy.value === 'name') {
-      return a.name.localeCompare(b.name);
+      return String(a.name || '').localeCompare(String(b.name || ''));
     } else if (sortBy.value === 'date') {
       const dateA = new Date(a.created || 0);
       const dateB = new Date(b.created || 0);
       return dateB - dateA; // Newest first
     } else if (sortBy.value === 'type') {
-      return a.type.localeCompare(b.type);
+      return String(a.type || '').localeCompare(String(b.type || ''));
     }
     return 0;
   });
@@ -216,7 +218,7 @@ const filteredAndSortedPresets = computed(() => {
 }
 
 .presets-table-container {
-  overflow-x: auto;
+  overflow-x: visible !important;
 }
 
 .presets-table {
@@ -253,5 +255,70 @@ const filteredAndSortedPresets = computed(() => {
 .presets-table th span {
   margin-left: var(--space-xs);
   opacity: 0.6;
+}
+
+.presets-table th:nth-child(3),
+.presets-table td:nth-child(3) {
+  /* Date column */
+  min-width: 120px;
+  max-width: 160px;
+  width: 18%;
+}
+
+.presets-table th:nth-child(1),
+.presets-table td:nth-child(1) {
+  /* Name column */
+  min-width: 120px;
+  max-width: 260px;
+  width: 40%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.presets-table th:nth-child(2),
+.presets-table td:nth-child(2) {
+  /* Type column */
+  min-width: 80px;
+  max-width: 120px;
+  width: 18%;
+}
+
+.presets-table th:nth-child(4),
+.presets-table td:nth-child(4) {
+  /* Actions column */
+  min-width: 120px;
+  max-width: 160px;
+  width: 24%;
+}
+
+@media (max-width: 700px) {
+  .presets-table th:nth-child(3),
+  .presets-table td:nth-child(3) {
+    display: none;
+  }
+  .presets-table th:nth-child(1),
+  .presets-table td:nth-child(1) {
+    max-width: 120px;
+    width: 50%;
+  }
+  .presets-table th:nth-child(2),
+  .presets-table td:nth-child(2) {
+    width: 25%;
+  }
+  .presets-table th:nth-child(4),
+  .presets-table td:nth-child(4) {
+    width: 25%;
+  }
+}
+
+.cell-actions {
+  opacity: 1 !important;
+  position: relative;
+  z-index: 1;
+}
+
+.table-row:hover .cell-actions {
+  opacity: 1 !important;
 }
 </style>

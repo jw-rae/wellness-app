@@ -14,6 +14,7 @@
         @play="handlePlayPreset"
         @export="handleExportPreset"
         @delete="handleDeletePreset"
+        @update="handleUpdatePreset"
       />
     </div>
 
@@ -62,10 +63,12 @@ function handlePlayPreset(preset) {
   // Store preset to be loaded by the view (same as import/drag-drop)
   if (preset.type === 'breathing') {
     sessionStorage.setItem('pendingBreathingPreset', JSON.stringify(preset));
+    sessionStorage.removeItem('pendingBilateralPreset');
     sessionStorage.setItem('collapsePanel', 'true'); // Collapse panel on play
     router.push('/breathing');
   } else if (preset.type === 'bilateral' || preset.type === 'emdr') {
     sessionStorage.setItem('pendingBilateralPreset', JSON.stringify(preset));
+    sessionStorage.removeItem('pendingBreathingPreset');
     sessionStorage.setItem('collapsePanel', 'true'); // Collapse panel on play
     router.push('/bilateral');
   }
@@ -92,6 +95,10 @@ function confirmDeleteAction() {
     deletePreset();
   }
   showDeleteModal.value = false;
+}
+
+function handleUpdatePreset(updatedPreset) {
+  presetStore.updatePreset(updatedPreset.id, updatedPreset);
 }
 </script>
 
