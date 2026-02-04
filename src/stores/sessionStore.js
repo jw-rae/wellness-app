@@ -9,14 +9,10 @@ export const useSessionStore = defineStore('session', () => {
     // State
     const isActive = ref(false);
     const isPaused = ref(false);
-    const currentMode = ref(null); // 'breathing' | 'emdr' | 'sequence' | null
+    const currentMode = ref(null); // 'breathing' | 'emdr' | null
     const currentPreset = ref(null);
-    const currentSequence = ref(null);
-    const sequencePresets = ref([]);
-    const currentStepIndex = ref(0);
     const elapsedTime = ref(0); // in seconds
     const totalDuration = ref(0); // in seconds
-    const isPlayingSequence = ref(false);
 
     // Timer interval ID
     let timerInterval = null;
@@ -36,18 +32,11 @@ export const useSessionStore = defineStore('session', () => {
     });
 
     // Actions
-    function startSession(mode, preset, sequence = null) {
+    function startSession(mode, preset) {
         console.log('startSession called with preset:', preset);
 
         currentMode.value = mode;
         currentPreset.value = preset;
-
-        // Only update sequence-related state if not already in a sequence
-        if (!isPlayingSequence.value) {
-            currentSequence.value = sequence;
-            currentStepIndex.value = 0;
-        }
-
         elapsedTime.value = 0;
 
         // Calculate duration from preset
@@ -91,8 +80,6 @@ export const useSessionStore = defineStore('session', () => {
         isPaused.value = false;
         currentMode.value = null;
         currentPreset.value = null;
-        currentSequence.value = null;
-        currentStepIndex.value = 0;
         elapsedTime.value = 0;
         totalDuration.value = 0;
         stopTimer();
@@ -121,102 +108,13 @@ export const useSessionStore = defineStore('session', () => {
 
     function completeSession() {
         stopTimer();
-
-        // If playing a sequence, move to next preset
-        if (isPlayingSequence.value && currentStepIndex.value < sequencePresets.value.length - 1) {
-            nextStep();
-        } else {
-            // End the session completely
-            isActive.value = false;
-            isPaused.value = false;
-            currentMode.value = null;
-            currentPreset.value = null;
-            currentSequence.value = null;
-            currentStepIndex.value = 0;
-            elapsedTime.value = 0;
-            totalDuration.value = 0;
-        }
-    }
-
-    function startSequence(sequence, presets) {
-        console.log('startSequence called with presets:', presets);
-
-        currentSequence.value = sequence;
-        sequencePresets.value = presets;
-        currentStepIndex.value = 0;
-        isPlayingSequence.value = true;
-
-        // Set the first preset but don't start the session yet
-        const firstPreset = presets[0];
-        console.log('First preset in sequence:', firstPreset);
-        console.log('First preset duration field:', firstPreset.duration);
-        console.log('First preset durationMinutes/Seconds:', firstPreset.durationMinutes, firstPreset.durationSeconds);
-
-        currentMode.value = firstPreset.type === 'breathing' ? 'breathing' : 'bilateral';
-        currentPreset.value = firstPreset;
-
-        // Calculate duration but don't start timer
-        // For breathing presets, prefer durationMinutes/Seconds over duration field
-        if ((firstPreset.durationMinutes !== undefined || firstPreset.durationSeconds !== undefined) && firstPreset.type === 'breathing') {
-            const mins = firstPreset.durationMinutes || 0;
-            const secs = firstPreset.durationSeconds || 0;
-            totalDuration.value = (mins * 60) + secs;
-            console.log('Calculated duration from min/sec (breathing):', mins, secs, '=', totalDuration.value);
-        } else if (firstPreset.duration !== undefined) {
-            totalDuration.value = firstPreset.duration;
-            console.log('Using preset.duration:', firstPreset.duration);
-        } else if (firstPreset.durationMinutes !== undefined || firstPreset.durationSeconds !== undefined) {
-            const mins = firstPreset.durationMinutes || 0;
-            const secs = firstPreset.durationSeconds || 0;
-            totalDuration.value = (mins * 60) + secs;
-            console.log('Calculated duration from min/sec:', mins, secs, '=', totalDuration.value);
-        } else {
-            totalDuration.value = 0;
-            console.log('No duration found');
-        }
-
-        // Session is NOT active yet - user must press start
+        // End the session completely
         isActive.value = false;
         isPaused.value = false;
+        currentMode.value = null;
+        currentPreset.value = null;
         elapsedTime.value = 0;
-    }
-
-    function nextStep() {
-        if (isPlayingSequence.value && currentStepIndex.value < sequencePresets.value.length - 1) {
-            currentStepIndex.value += 1;
-            const nextPreset = sequencePresets.value[currentStepIndex.value];
-
-            // Start next preset
-            elapsedTime.value = 0;
-            currentPreset.value = nextPreset;
-            currentMode.value = nextPreset.type === 'breathing' ? 'breathing' : 'bilateral';
-
-            // Calculate duration from preset
-            if (nextPreset.duration !== undefined) {
-                totalDuration.value = nextPreset.duration;
-            } else if (nextPreset.durationMinutes !== undefined || nextPreset.durationSeconds !== undefined) {
-                const mins = nextPreset.durationMinutes || 0;
-                const secs = nextPreset.durationSeconds || 0;
-                totalDuration.value = (mins * 60) + secs;
-            } else {
-                totalDuration.value = 0;
-            }
-
-            isActive.value = true;
-            isPaused.value = false;
-            startTimer();
-        } else {
-            // Sequence complete
-            isPlayingSequence.value = false;
-            isActive.value = false;
-            isPaused.value = false;
-            currentMode.value = null;
-            currentPreset.value = null;
-            currentSequence.value = null;
-            currentStepIndex.value = 0;
-            elapsedTime.value = 0;
-            totalDuration.value = 0;
-        }
+        totalDuration.value = 0;
     }
 
     return {
@@ -225,12 +123,8 @@ export const useSessionStore = defineStore('session', () => {
         isPaused,
         currentMode,
         currentPreset,
-        currentSequence,
-        sequencePresets,
-        currentStepIndex,
         elapsedTime,
         totalDuration,
-        isPlayingSequence,
 
         // Computed
         remainingTime,
@@ -239,10 +133,8 @@ export const useSessionStore = defineStore('session', () => {
 
         // Actions
         startSession,
-        startSequence,
         pauseSession,
         resumeSession,
         stopSession,
-        nextStep,
     };
 });
