@@ -91,24 +91,6 @@ const durationSettings = computed(() => {
   };
 });
 
-// Watch for sequence preset changes
-watch(() => sessionStore.currentPreset, (preset, oldPreset) => {
-  if (preset && sessionStore.isPlayingSequence) {
-    // Check if we need to navigate to a different view
-    if (preset.type === 'bilateral' || preset.type === 'emdr') {
-      router.push('/bilateral');
-      return;
-    }
-    
-    // Load the breathing preset
-    if (preset.type === 'breathing') {
-      nextTick(() => {
-        loadBreathingPreset(preset);
-      });
-    }
-  }
-}, { immediate: true });
-
 onMounted(() => {
   // Check for pending preset from library or bilateral view
   const pendingPreset = sessionStorage.getItem('pendingBreathingPreset');
@@ -221,6 +203,29 @@ function loadBreathingPreset(preset) {
   
   if (preset.selectedPattern && controlsRef.value.basicControlsRef) {
     controlsRef.value.basicControlsRef.selectedPattern = preset.selectedPattern;
+  } else if (preset.breathingPattern && controlsRef.value.basicControlsRef) {
+    // If only breathingPattern is provided (old format), try to match it to a known pattern
+    const pattern = preset.breathingPattern;
+    const patterns = {
+      'box': { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 4 },
+      '478': { inhale: 4, hold: 7, exhale: 8, holdAfterExhale: 0 },
+      'equal': { inhale: 5, hold: 0, exhale: 5, holdAfterExhale: 0 },
+      'calm': { inhale: 4, hold: 0, exhale: 6, holdAfterExhale: 0 },
+      'energize': { inhale: 6, hold: 0, exhale: 2, holdAfterExhale: 0 },
+      'triangle': { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 0 },
+      'square-plus': { inhale: 6, hold: 6, exhale: 6, holdAfterExhale: 6 },
+    };
+    
+    // Try to find matching pattern
+    for (const [key, knownPattern] of Object.entries(patterns)) {
+      if (pattern.inhale === knownPattern.inhale && 
+          pattern.hold === knownPattern.hold && 
+          pattern.exhale === knownPattern.exhale && 
+          pattern.holdAfterExhale === knownPattern.holdAfterExhale) {
+        controlsRef.value.basicControlsRef.selectedPattern = key;
+        break;
+      }
+    }
   }
   if (preset.durationMinutes !== undefined && controlsRef.value.basicControlsRef) {
     controlsRef.value.basicControlsRef.durationMinutes = preset.durationMinutes;

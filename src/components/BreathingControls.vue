@@ -57,37 +57,12 @@ defineExpose({
   toggleSidebar,
 });
 
-// Auto-collapse when sequence starts
-watch(() => sessionStore.isPlayingSequence, (isPlaying) => {
-  if (isPlaying) {
-    isCollapsed.value = true;
-    emit('collapse-changed', true);
-  }
-});
-
 function toggleSidebar() {
   isCollapsed.value = !isCollapsed.value;
   emit('collapse-changed', isCollapsed.value);
 }
 
 function handleStart() {
-  // If sequence is loaded but not started yet, start it with the current preset
-  if (sessionStore.isPlayingSequence && !sessionStore.isActive && sessionStore.currentPreset) {
-    const preset = sessionStore.currentPreset;
-    console.log('Starting sequence preset:', preset);
-    const mode = preset.type === 'breathing' ? 'breathing' : 'bilateral';
-    sessionStore.startSession(mode, preset);
-    return;
-  }
-  
-  // If already active (sequence is running), just resume if paused
-  if (sessionStore.isActive && sessionStore.isPlayingSequence) {
-    if (sessionStore.isPaused) {
-      sessionStore.resumeSession();
-    }
-    return;
-  }
-  
   // Start a new standalone session
   const breathingPattern = basicControlsRef.value.getBreathingPattern();
   const totalSeconds = basicControlsRef.value.getTotalSeconds();
@@ -96,6 +71,8 @@ function handleStart() {
     name: 'Current Session',
     type: 'breathing',
     duration: totalSeconds,
+    durationMinutes: basicControlsRef.value.durationMinutes,
+    durationSeconds: basicControlsRef.value.durationSeconds,
     breathingPattern,
     affirmationText: affirmationsRef.value.affirmations || '',
   };
@@ -198,6 +175,29 @@ function applyPresetToUI(preset) {
   // Apply breathing pattern
   if (preset.selectedPattern) {
     basicControlsRef.value.selectedPattern = preset.selectedPattern;
+  } else if (preset.breathingPattern) {
+    // If only breathingPattern is provided (old format), try to match it to a known pattern
+    const pattern = preset.breathingPattern;
+    const patterns = {
+      'box': { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 4 },
+      '478': { inhale: 4, hold: 7, exhale: 8, holdAfterExhale: 0 },
+      'equal': { inhale: 5, hold: 0, exhale: 5, holdAfterExhale: 0 },
+      'calm': { inhale: 4, hold: 0, exhale: 6, holdAfterExhale: 0 },
+      'energize': { inhale: 6, hold: 0, exhale: 2, holdAfterExhale: 0 },
+      'triangle': { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 0 },
+      'square-plus': { inhale: 6, hold: 6, exhale: 6, holdAfterExhale: 6 },
+    };
+    
+    // Try to find matching pattern
+    for (const [key, knownPattern] of Object.entries(patterns)) {
+      if (pattern.inhale === knownPattern.inhale && 
+          pattern.hold === knownPattern.hold && 
+          pattern.exhale === knownPattern.exhale && 
+          pattern.holdAfterExhale === knownPattern.holdAfterExhale) {
+        basicControlsRef.value.selectedPattern = key;
+        break;
+      }
+    }
   }
   
   // Apply duration

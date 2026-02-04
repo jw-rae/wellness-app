@@ -155,15 +155,7 @@ const formattedTime = computed(() => {
 });
 
 function startSession() {
-  // If a sequence is loaded, start it with the current preset
-  if (sessionStore.isPlayingSequence && sessionStore.currentPreset) {
-    const preset = sessionStore.currentPreset;
-    const mode = preset.type === 'breathing' ? 'breathing' : 'bilateral';
-    sessionStore.startSession(mode, preset);
-    return;
-  }
-  
-  // Otherwise start a standalone session with a default preset
+  // Start a standalone session with a default preset
   const defaultPreset = presetStore.breathingPresets[0];
   sessionStore.startSession('breathing', defaultPreset);
 }
@@ -193,11 +185,6 @@ function handleKeydown(event) {
     }
     
     event.preventDefault();
-    
-    // If sequence is loaded but not started, don't handle here
-    if (!sessionStore.isActive && sessionStore.isPlayingSequence) {
-      return;
-    }
     
     if (!sessionStore.isActive) {
       startSession();

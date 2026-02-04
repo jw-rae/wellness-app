@@ -36,6 +36,7 @@ import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useSessionStore } from '../../stores/sessionStore.js';
 
 const sessionStore = useSessionStore();
+const emit = defineEmits(['start-session']);
 
 const props = defineProps({
   bpm: {
@@ -233,8 +234,8 @@ function stopAnimation() {
 
 function handleClick() {
   if (!sessionStore.isActive) {
-    // Session will be started from controls
-    return;
+    // Emit event to parent to start session
+    emit('start-session');
   } else {
     togglePause();
   }
@@ -257,7 +258,10 @@ function handleKeydown(event) {
     }
     
     event.preventDefault();
-    if (sessionStore.isActive) {
+    
+    if (!sessionStore.isActive) {
+      emit('start-session');
+    } else {
       togglePause();
     }
   }
@@ -273,17 +277,10 @@ watch(() => sessionStore.isActive, (active, wasActive) => {
     stopAnimation();
     stopAffirmations();
   }
-}, { immediate: true }); // Add immediate to check initial state
+});
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown);
-  
-  // Start animation if session is already active
-  if (sessionStore.isActive) {
-    initAudio();
-    startAnimation();
-    startAffirmations();
-  }
 });
 
 onUnmounted(() => {
@@ -333,12 +330,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
 }
 
 .slide-container {
   width: 100%;
   height: 100%;
   position: relative;
+  pointer-events: none;
   display: flex;
   align-items: center;
 }
@@ -351,6 +350,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 var(--space-2xl);
+  pointer-events: none;
 }
 
 .dot {
@@ -359,6 +359,7 @@ onUnmounted(() => {
   background: var(--color-brand-primary-500);
   border-radius: 50%;
   box-shadow: 0 0 20px var(--color-brand-primary-500);
+  pointer-events: none;
 }
 
 .slide-container .dot {
@@ -389,6 +390,7 @@ onUnmounted(() => {
   font-style: italic;
   max-width: 600px;
   animation: fadeIn var(--duration-500) ease-in;
+  pointer-events: none;
 }
 
 @keyframes fadeIn {

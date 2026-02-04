@@ -54,14 +54,6 @@ const saveImportRef = ref(null);
 
 const emit = defineEmits(['collapse-changed']);
 
-// Auto-collapse when sequence starts
-watch(() => sessionStore.isPlayingSequence, (isPlaying) => {
-  if (isPlaying) {
-    isCollapsed.value = true;
-    emit('collapse-changed', true);
-  }
-});
-
 // Computed properties to access child component values
 const bpm = computed(() => basicControlsRef.value?.bpm || 30);
 const durationMinutes = computed(() => basicControlsRef.value?.durationMinutes || 5);
@@ -87,28 +79,14 @@ function toggleSidebar() {
 }
 
 function handleStart() {
-  // If sequence is loaded but not started yet, start it with the current preset
-  if (sessionStore.isPlayingSequence && !sessionStore.isActive && sessionStore.currentPreset) {
-    const preset = sessionStore.currentPreset;
-    const mode = preset.type === 'breathing' ? 'breathing' : 'bilateral';
-    sessionStore.startSession(mode, preset);
-    return;
-  }
-  
-  // If already active (sequence is running), just resume if paused
-  if (sessionStore.isActive && sessionStore.isPlayingSequence) {
-    if (sessionStore.isPaused) {
-      sessionStore.resumeSession();
-    }
-    return;
-  }
-  
   // Start a new standalone session
   const totalSeconds = basicControlsRef.value?.getTotalSeconds() || 300;
   const preset = {
     name: 'Current Session',
     type: 'bilateral',
     duration: totalSeconds,
+    durationMinutes: durationMinutes.value,
+    durationSeconds: durationSeconds.value,
     bpm: bpm.value,
     visualMode: visualMode.value,
     bilateralAudio: bilateralAudio.value,
@@ -293,6 +271,7 @@ defineExpose({
   affirmationInterval,
   applyBilateralPreset,
   toggleSidebar,
+  handleStart,
 });
 </script>
 

@@ -111,8 +111,6 @@ const breathingPatternOptions = [
   { value: 'energize', label: 'Energizing (6-2)' },
   { value: 'triangle', label: 'Triangle (4-4-4)' },
   { value: 'square-plus', label: 'Extended Box (6-6-6-6)' },
-  { value: 'coherent', label: 'Coherent (5-5)' },
-  { value: 'custom', label: 'Custom Pattern' },
 ];
 
 function getBreathingPattern() {
@@ -124,8 +122,6 @@ function getBreathingPattern() {
     energize: { inhale: 6, hold: 0, exhale: 2, holdAfterExhale: 0 },
     triangle: { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 0 },
     'square-plus': { inhale: 6, hold: 6, exhale: 6, holdAfterExhale: 6 },
-    coherent: { inhale: 5, hold: 0, exhale: 5, holdAfterExhale: 0 },
-    custom: { inhale: 4, hold: 4, exhale: 4, holdAfterExhale: 0 },
   };
   return patterns[selectedPattern.value] || patterns.box;
 }

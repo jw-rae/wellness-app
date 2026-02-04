@@ -22,6 +22,7 @@
         :affirmationInterval="bilateralSettings.affirmationInterval"
         :durationMinutes="bilateralSettings.durationMinutes"
         :durationSeconds="bilateralSettings.durationSeconds"
+        @start-session="handleStartSession"
       />
       
       <div v-if="isDragOver" class="drop-overlay">
@@ -100,24 +101,6 @@ const bilateralSettings = computed(() => {
     durationSeconds: durationSeconds ?? 0,
   };
 });
-
-// Watch for sequence preset changes
-watch(() => sessionStore.currentPreset, (preset, oldPreset) => {
-  if (preset && sessionStore.isPlayingSequence) {
-    // Check if we need to navigate to a different view
-    if (preset.type === 'breathing') {
-      router.push('/breathing');
-      return;
-    }
-    
-    // Load the bilateral/emdr preset
-    if (preset.type === 'bilateral' || preset.type === 'emdr') {
-      nextTick(() => {
-        controlsRef.value?.applyBilateralPreset(preset);
-      });
-    }
-  }
-}, { immediate: true });
 
 onMounted(() => {
   // Check for pending preset from breathing view drag-drop
@@ -216,6 +199,13 @@ function loadBreathingPreset(preset) {
   // This will be called after routing to breathing view
   // Store in sessionStorage for breathing view to pick up
   sessionStorage.setItem('pendingBreathingPreset', JSON.stringify(preset));
+}
+
+function handleStartSession() {
+  // Trigger the start button in controls
+  if (controlsRef.value && controlsRef.value.handleStart) {
+    controlsRef.value.handleStart();
+  }
 }
 
 function showError(title, message) {
