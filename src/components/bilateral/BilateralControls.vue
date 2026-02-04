@@ -299,6 +299,9 @@ defineExpose({
   background: transparent;
   border-right: none;
   overflow: visible;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
 }
 
 .bilateral-controls.collapsed .toggle-btn {

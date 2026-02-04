@@ -2,7 +2,7 @@
   <CollapsibleSection 
     title="Style" 
     :icon="Settings" 
-    :initially-expanded="true"
+    :initially-expanded="false"
   >
     <div class="control-section">
       <GameSelect
@@ -67,7 +67,7 @@ import { Settings, Sun, Moon } from 'lucide-vue-next';
 import CollapsibleSection from '../ui/CollapsibleSection.vue';
 import GameSelect from '../ui/GameSelect.vue';
 
-const selectedTheme = ref('pink');
+const selectedTheme = ref('cool');
 const darkMode = ref(true);
 const showInhaleExhale = ref(true);
 const showTime = ref(true);
@@ -104,6 +104,7 @@ function setDarkMode() {
 
 onMounted(() => {
   setDarkMode();
+  document.documentElement.setAttribute('data-theme', selectedTheme.value);
 });
 
 defineExpose({

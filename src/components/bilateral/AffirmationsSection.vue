@@ -10,11 +10,13 @@
         <textarea 
           v-model="affirmations"
           placeholder="Enter affirmations (one per line)"
-          rows="4"
+          ref="affirmationsTextarea"
+          @input="autoResize"
+          class="roomy-textarea"
         ></textarea>
       </label>
+      <div class="textarea-breathing-space"></div>
     </div>
-
     <div class="control-section">
       <label>
         <span class="label-text">Affirmation Interval: {{ affirmationInterval }}s</span>
@@ -32,12 +34,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { MessageCircle } from 'lucide-vue-next';
 import CollapsibleSection from '../ui/CollapsibleSection.vue';
-
 const affirmations = ref('I am safe\nI am healing\nI release the past\nI trust the process');
 const affirmationInterval = ref(15);
+const affirmationsTextarea = ref(null);
+
+function autoResize() {
+  nextTick(() => {
+    const ta = affirmationsTextarea.value;
+    if (ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 32 + 'px'; // 32px for 2 lines breathing room
+    }
+  });
+}
+
+onMounted(() => {
+  autoResize();
+});
 
 defineExpose({
   affirmations,
@@ -63,7 +79,8 @@ label {
   color: var(--color-text-primary);
 }
 
-textarea {
+
+.roomy-textarea {
   width: 100%;
   padding: var(--space-sm);
   background: var(--color-surface-tertiary);
@@ -72,9 +89,15 @@ textarea {
   color: var(--color-text-primary);
   font-family: inherit;
   font-size: var(--font-size-sm);
-  resize: vertical;
-  min-height: 80px;
+  resize: none;
+  min-height: 120px;
   transition: all var(--duration-200);
+  box-sizing: border-box;
+  margin-bottom: 0;
+}
+
+.textarea-breathing-space {
+  min-height: 2.5em;
 }
 
 textarea:focus {

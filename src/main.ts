@@ -20,7 +20,8 @@ app.use(router)
 const presetStore = usePresetStore()
 presetStore.initializePresets()
 
-// Set theme to pink
-document.documentElement.setAttribute('data-theme', 'green')
+// Set theme to cool and dark mode by default
+document.documentElement.setAttribute('data-theme', 'cool')
+document.documentElement.setAttribute('data-color-scheme', 'dark')
 
 app.mount('#app')

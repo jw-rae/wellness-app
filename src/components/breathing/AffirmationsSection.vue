@@ -9,20 +9,37 @@
       <textarea 
         id="affirmations" 
         v-model="affirmations"
-        rows="5"
         placeholder="I am calm&#10;I am centered&#10;I am at peace&#10;I breathe with ease"
+        ref="affirmationsTextarea"
+        @input="autoResize"
+        class="roomy-textarea"
       ></textarea>
+      <div class="textarea-breathing-space"></div>
       <p class="help-text">Affirmations change on every inhale. Leave empty to disable.</p>
     </div>
   </CollapsibleSection>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, nextTick } from 'vue';
 import { MessageCircle } from 'lucide-vue-next';
 import CollapsibleSection from '../ui/CollapsibleSection.vue';
-
 const affirmations = ref('I am calm\nI am centered\nI am at peace\nI breathe with ease');
+const affirmationsTextarea = ref(null);
+
+function autoResize() {
+  nextTick(() => {
+    const ta = affirmationsTextarea.value;
+    if (ta) {
+      ta.style.height = 'auto';
+      ta.style.height = ta.scrollHeight + 32 + 'px'; // 32px for 2 lines breathing room
+    }
+  });
+}
+
+onMounted(() => {
+  autoResize();
+});
 
 defineExpose({
   affirmations,
@@ -128,7 +145,8 @@ input:checked + .slider:before {
   transform: translateX(18px);
 }
 
-textarea {
+
+.roomy-textarea {
   width: 100%;
   padding: var(--space-sm);
   background: var(--color-surface-elevated);
@@ -137,8 +155,14 @@ textarea {
   color: var(--color-text-primary);
   font-size: var(--font-size-sm);
   font-family: inherit;
-  resize: vertical;
-  min-height: 80px;
+  resize: none;
+  min-height: 120px;
+  box-sizing: border-box;
+  margin-bottom: 0;
+}
+
+.textarea-breathing-space {
+  min-height: 2.5em;
 }
 
 textarea:focus {
