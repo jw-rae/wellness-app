@@ -389,11 +389,11 @@ watch(() => sessionStore.isPaused, (paused) => {
 }
 
 .breathing-circle.inhale {
-  animation: pulse-in 4s ease-in-out;
+  /* Removed hardcoded animation: pulse-in 4s ease-in-out; */
 }
 
 .breathing-circle.exhale {
-  animation: pulse-out 4s ease-in-out;
+  /* Removed hardcoded animation: pulse-out 4s ease-in-out; */
 }
 
 .center-text {
